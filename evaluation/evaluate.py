@@ -171,7 +171,7 @@ def run_evaluation() -> dict:
         "note": ("Three sets are scored. The development set guided the rules. The held-out set was written afterwards, "
                  "but it was used for one round of error analysis, so it no longer counts as unseen. The challenge set holds longer, messier "
                  "texts and was not tuned on, so it is the fairest guide to real use. All sets were annotated by the project author, "
-                 "so every number here is optimistic compared with real patient text. The Hindi and Marathi set (20 short texts) was written and annotated together with the Devanagari word list, so it shows that the support works, not how well it generalises."),
+                 "so every number here is optimistic compared with real patient text. The Hindi and Marathi set (20 short texts) and the mixed-language set (10 texts, English with Hinglish, Hindi or Marathi inside one sentence) were written and annotated together with the word list, so they show that the support works, not how well it generalises."),
     }
 
 

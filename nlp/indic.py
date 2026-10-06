@@ -200,6 +200,7 @@ _MARATHI = {
     "तास तासांपासून": "ghante",
     "वर्ष वर्षांपासून": "saal",
     "कालपासून काल": "yesterday",
+    "पासून": "se",
     "आजपासून": "today",
     "आज": "today",
     # numbers
@@ -224,20 +225,34 @@ NORMALISE = {**_build(_MARATHI), **_build(_HINDI)}
 # ------------------------------------------------------------------ language guess
 _MARATHI_MARKERS = {deva_key(w) for w in "आहे आहेत नाही नाहीये मला माझे माझ्या पासून आणि होत येत दुखत खूप".split()}
 _HINDI_MARKERS = {deva_key(w) for w in "है हैं नहीं मुझे मैं से रहा रही और भी बहुत में".split()}
-_HINGLISH_MARKERS = {"hai", "nahi", "nahin", "mujhe", "bukhar", "khansi", "din", "se", "thoda", "bahut", "aur", "dard", "kal"}
-_WORD_RE = re.compile(r"[ऀ-ॿ]+|[A-Za-z']+")
+_HINGLISH_MARKERS = set("""hai hain nahi nahin nhi mujhe main mera meri mere aur bhi bukhar khansi din dino se thoda thodi bahut zyada dard sar pet kal aaj parso
+ho raha rahi rahe hota hoti kuch sath saath par lekin magar ulti dast kamzori thakan thakaan chakkar sardi zukam paseena khujli sujan kaan kamar badan
+seene gale me mein ka ki ke ko ye yeh woh bete beta beti maa pita bhai behen patni pati""".split())
+_WORD_RE = re.compile(r"[\u0900-\u097F]+|[A-Za-z']+")
 
 
 def detect_language(text: str) -> dict:
-    """Very small script / marker-word guess, shown to the user as a label (not used by the engine)."""
+    """Small script / marker-word guess shown to the user as a label (not used by the engine).
+
+    Text that mixes scripts or languages in one sentence is reported as "Mixed", with the parts listed."""
     words = [deva_key(w) if has_devanagari(w) else w.lower() for w in _WORD_RE.findall(text)]
-    dev = sum(1 for c in text if "ऀ" <= c <= "ॿ")
-    latin = sum(1 for c in text if c.isascii() and c.isalpha())
-    if dev and dev >= latin:
-        mr = sum(1 for w in words if w in _MARATHI_MARKERS or w.endswith(deva_key("पासून")))
-        hi = sum(1 for w in words if w in _HINDI_MARKERS)
-        code, name = ("mr", "Marathi") if mr > hi else ("hi", "Hindi")
-        return {"code": code, "name": name, "script": "Devanagari"}
-    if sum(1 for w in words if w in _HINGLISH_MARKERS) >= 2:
-        return {"code": "hi-Latn", "name": "Hinglish", "script": "Latin"}
-    return {"code": "en", "name": "English", "script": "Latin"}
+    dev = [w for w in words if has_devanagari(w)]
+    latin = [w for w in words if not has_devanagari(w)]
+    hinglish = [w for w in latin if w in _HINGLISH_MARKERS]
+    english = [w for w in latin if len(w) >= 3 and w not in _HINGLISH_MARKERS]
+    if dev:
+        mr = sum(1 for w in dev if w in _MARATHI_MARKERS or w.endswith(deva_key("पासून")))
+        hi = sum(1 for w in dev if w in _HINDI_MARKERS)
+        base, code = ("Marathi", "mr") if mr > hi else ("Hindi", "hi")
+        parts = [base]
+        if english:
+            parts.append("English")
+        elif len(hinglish) >= 2:
+            parts.append("Hinglish")
+        if len(parts) > 1:
+            return {"code": "mixed", "name": "Mixed", "script": "Devanagari + Latin", "parts": parts,
+                    "label": "Mixed · " + " + ".join(parts)}
+        return {"code": code, "name": base, "script": "Devanagari", "parts": parts, "label": f"{base} · देवनागरी"}
+    if len(hinglish) >= 2:
+        return {"code": "hi-Latn", "name": "Hinglish", "script": "Latin", "parts": ["Hinglish"], "label": "Hinglish"}
+    return {"code": "en", "name": "English", "script": "Latin", "parts": ["English"], "label": "English"}

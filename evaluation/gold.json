@@ -1817,6 +1817,160 @@
      "days": 1
     }
    ]
+  },
+  {
+   "id": "X01",
+   "set": "mixed",
+   "text": "mujhe fever hai aur पेट में दर्द",
+   "symptoms": [
+    {
+     "name": "fever"
+    },
+    {
+     "name": "stomach pain"
+    }
+   ]
+  },
+  {
+   "id": "X02",
+   "set": "mixed",
+   "text": "मुझे fever नहीं है, but सिर दर्द है since yesterday",
+   "symptoms": [
+    {
+     "name": "fever",
+     "status": "absent"
+    },
+    {
+     "name": "headache",
+     "days": 1
+    }
+   ]
+  },
+  {
+   "id": "X03",
+   "set": "mixed",
+   "text": "I have बुखार for 3 दिन and no cough",
+   "symptoms": [
+    {
+     "name": "fever",
+     "days": 3
+    },
+    {
+     "name": "cough",
+     "status": "absent"
+    }
+   ]
+  },
+  {
+   "id": "X04",
+   "set": "mixed",
+   "text": "ताप since 2 days, खोकला नाही, headache आहे",
+   "symptoms": [
+    {
+     "name": "fever",
+     "days": 2
+    },
+    {
+     "name": "cough",
+     "status": "absent"
+    },
+    {
+     "name": "headache"
+    }
+   ]
+  },
+  {
+   "id": "X05",
+   "set": "mixed",
+   "text": "पेट दर्द है और vomiting हो रही है, loose motions नहीं हैं।",
+   "symptoms": [
+    {
+     "name": "stomach pain"
+    },
+    {
+     "name": "vomiting"
+    },
+    {
+     "name": "diarrhea",
+     "status": "absent"
+    }
+   ]
+  },
+  {
+   "id": "X06",
+   "set": "mixed",
+   "text": "मला fever आहे आणि cough नाही",
+   "symptoms": [
+    {
+     "name": "fever"
+    },
+    {
+     "name": "cough",
+     "status": "absent"
+    }
+   ]
+  },
+  {
+   "id": "X07",
+   "set": "mixed",
+   "text": "मेरी wife को बुखार है, मुझे सिर दर्द है",
+   "symptoms": [
+    {
+     "name": "fever",
+     "subject": "other"
+    },
+    {
+     "name": "headache"
+    }
+   ]
+  },
+  {
+   "id": "X08",
+   "set": "mixed",
+   "text": "मुझे 2 days से बुखार है और body ache भी है",
+   "symptoms": [
+    {
+     "name": "fever",
+     "days": 2
+    },
+    {
+     "name": "body ache",
+     "days": 2
+    }
+   ]
+  },
+  {
+   "id": "X09",
+   "set": "mixed",
+   "text": "Doctor, mujhe teen din se bukhar hai. Sath me sar dard bhi hai, but cough nahi hai.",
+   "symptoms": [
+    {
+     "name": "fever",
+     "days": 3
+    },
+    {
+     "name": "headache"
+    },
+    {
+     "name": "cough",
+     "status": "absent"
+    }
+   ]
+  },
+  {
+   "id": "X10",
+   "set": "mixed",
+   "text": "chest pain नहीं है par thoda breathless feel hota hai",
+   "symptoms": [
+    {
+     "name": "chest pain",
+     "status": "absent"
+    },
+    {
+     "name": "shortness of breath",
+     "severity": "mild"
+    }
+   ]
   }
  ],
  "history": {

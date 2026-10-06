@@ -326,6 +326,20 @@ class DevanagariSupport(unittest.TestCase):
         self.assertEqual(analyze("mujhe bukhar hai aur sar dard hai")["language"]["code"], "hi-Latn")
 
 
+class MixedLanguage(unittest.TestCase):
+    def test_mixed_sentence_is_understood_and_labelled(self):
+        a = analyze("mujhe fever hai aur पेट में दर्द")
+        self.assertEqual({s["name"] for s in a["symptoms"]}, {"fever", "stomach pain"})
+        self.assertEqual(a["language"]["code"], "mixed")
+        self.assertEqual(a["language"]["parts"], ["Hindi", "English"])
+
+    def test_negation_crosses_languages(self):
+        r = {(s["name"], s["status"]) for s in analyze("मुझे fever नहीं है, but सिर दर्द है since yesterday")["symptoms"]}
+        self.assertEqual(r, {("fever", "absent"), ("headache", "present")})
+        r = {(s["name"], s["status"]) for s in analyze("I have बुखार for 3 दिन and no cough")["symptoms"]}
+        self.assertEqual(r, {("fever", "present"), ("cough", "absent")})
+
+
 class CompareVisits(unittest.TestCase):
     def test_new_resolved_and_changed(self):
         from compare import compare_visits

@@ -15,7 +15,7 @@
   const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
   /* ------------------------------------------------------------ views */
-  const VIEWS = ["welcome", "home", "analyzer", "compare", "pipeline", "how", "evaluation", "about"];
+  const VIEWS = ["welcome", "home", "analyzer", "live", "compare", "pipeline", "how", "evaluation", "about"];
   let evalLoaded = false;
   let datasetLoaded = false;
 
@@ -216,7 +216,7 @@
           <button class="btn small" type="button" id="dl-report">⤓ Download report</button>
         </div>
       </div>
-      <div class="block"><h3>Note for the doctor<span class="lang-badge" title="Detected input language">${esc(r.language ? r.language.name + (r.language.script === "Devanagari" ? " · देवनागरी" : "") : "English")}</span></h3><p class="note">${esc(r.summary)}</p></div>
+      <div class="block"><h3>Note for the doctor<span class="lang-badge" title="Detected input language">${esc(r.language ? (r.language.label || r.language.name) : "English")}</span></h3><p class="note">${esc(r.summary)}</p></div>
       ${flags}
       <div class="block"><h3>Structured symptoms</h3>${tableHtml(r.symptoms)}</div>
       ${fups}
@@ -428,7 +428,7 @@
         </tbody></table></div>
         <h2 class="plain">Development set and held-out set</h2>
         <div class="eval-table table-wrap"><table>${metricHead}<tbody>
-          ${Object.entries(e.by_set).map(([k, v]) => metricRow(`${({ indic: "Hindi and Marathi", heldout: "Held-out" }[k] || cap(k))} (${v.cases} texts) — symptom and status`, v.assertion)).join("")}
+          ${Object.entries(e.by_set).map(([k, v]) => metricRow(`${({ indic: "Hindi and Marathi", mixed: "Mixed languages", heldout: "Held-out" }[k] || cap(k))} (${v.cases} texts) — symptom and status`, v.assertion)).join("")}
         </tbody></table></div>
         <p class="muted">${esc(e.note)}</p>
         ${e.history && e.history.heldout_first_run ? `<p class="muted">First run on the held-out set: ${pct(e.history.heldout_first_run.found_and_status_f1)} F1 for symptom and status, before its errors were studied. First run on the challenge set: ${pct(e.history.challenge_first_run.found_and_status_f1)}.</p>` : ""}
@@ -632,6 +632,10 @@
 
   // text with marked spans (offsets count code points, like the engine)
   function spanHtml(text, spans) {
+    return `<p class="pl-text">${spanInner(text, spans)}</p>`;
+  }
+
+  function spanInner(text, spans) {
     const cps = Array.from(text), n = cps.length;
     const owner = new Array(n).fill(-1);
     spans.forEach((h, idx) => {
@@ -648,7 +652,7 @@
       html += o === -1 ? seg : `<mark class="hl hl-${spans[o].label}" style="--i:${k++}" title="${esc(spans[o].title || "")}">${seg}</mark>`;
       i = j;
     }
-    return `<p class="pl-text">${html}</p>`;
+    return html;
   }
 
   const chip = (t, cls = "", i = 0) => `<span class="pl-chip ${cls}" style="--i:${i}">${t}</span>`;
@@ -768,6 +772,167 @@
     window.addEventListener("hashchange", () => { if (location.hash !== "#pipeline") stopAuto(); });
   }
 
+  /* ------------------------------------------------------------ live consultation */
+  const DEMO_LINES = [
+    "Doctor, mujhe teen din se bukhar hai.",
+    "Sath me sar dard bhi hai, but cough nahi hai.",
+    "मुझे पेट में दर्द भी है और उल्टी हो रही है।",
+    "I took paracetamol but the headache gets worse after eating.",
+    "Chest pain nahi hai, par thoda breathless feel hota hai.",
+  ];
+  const lv = { text: "", interim: "", rec: null, listening: false, last: null, seen: new Set(), seq: 0, demo: 0, restartTimer: null };
+  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  function lvStatus(msg, live = false) {
+    const el = $("#lv-status");
+    el.textContent = msg;
+    el.classList.toggle("on", live);
+  }
+
+  function lvDrawTranscript() {
+    const box = $("#lv-transcript");
+    const r = lv.last;
+    const body = r && r.text === lv.text ? spanInner(lv.text, r.highlights) : esc(lv.text);
+    const interim = lv.interim ? ` <span class="lv-interim">${esc(lv.interim)}</span>` : "";
+    box.innerHTML = body || interim
+      ? `<p class="pl-text">${body}${interim}</p>`
+      : '<span class="lv-placeholder">What the patient says appears here, sentence by sentence.</span>';
+    box.scrollTop = box.scrollHeight;
+  }
+
+  function lvRender(r) {
+    lv.last = r;
+    lastResult = r;                                   // so Copy note and Download report work from this page
+    lvDrawTranscript();
+    const [title] = LEVELS[r.attention_level] || LEVELS.routine;
+    const patient = r.symptoms.filter((s) => s.subject === "patient");
+    const others = r.symptoms.filter((s) => s.subject !== "patient");
+    const card = (s) => {
+      const key = `${s.name}|${s.status}|${s.subject}`;
+      const fresh = !lv.seen.has(key);
+      lv.seen.add(key);
+      const who = s.subject !== "patient" ? ` · ${esc(s.subject)}` : "";
+      return `<div class="lv-card${fresh ? " is-new" : ""}"><div class="lv-card-top"><b>${esc(cap(s.name))}</b><span class="pl-tag st-${s.status}">${esc(STATUS_NAME[s.status])}${who}</span></div><p>${esc(s.summary.replace(/^[^(]*/, "").replace(/^\(|\)$/g, "") || (s.reason || "no details yet"))}</p></div>`;
+    };
+    $("#lv-out").innerHTML = `
+      <div class="lv-verdict lvl-${esc(r.attention_level)}"><span>⚑</span><div><b>${esc(title)}</b><small>${r.red_flags.length ? esc(r.red_flags.map((f) => f.title).join(" · ")) : "No red flags so far"}</small></div><em class="lang-badge">${esc(r.language.label || r.language.name)}</em></div>
+      <div class="lv-block"><div class="lv-label">Note for the doctor</div><p class="lv-note">${esc(r.summary)}</p></div>
+      <div class="lv-block"><div class="lv-label">Symptoms (${patient.length})</div><div class="lv-cards">${patient.map(card).join("") || '<p class="muted">Nothing found yet.</p>'}${others.map(card).join("")}</div></div>
+      <div class="lv-actions"><button class="btn small" type="button" id="lv-copy">Copy note</button><button class="btn small" type="button" id="lv-report">⤓ Download report</button></div>`;
+    $("#lv-copy").addEventListener("click", async (e) => {
+      try { await navigator.clipboard.writeText(noteText(r)); e.target.textContent = "Copied"; } catch { e.target.textContent = "Could not copy"; }
+      setTimeout(() => (e.target.textContent = "Copy note"), 1500);
+    });
+    $("#lv-report").addEventListener("click", () => { lastResult = r; downloadReport(); });
+  }
+
+  async function lvAnalyze() {
+    const mine = ++lv.seq;
+    if (!lv.text.trim()) { lv.last = null; $("#lv-out").innerHTML = '<div class="empty"><p>The live note appears here.</p></div>'; lvDrawTranscript(); return; }
+    try {
+      const res = await fetch("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: lv.text }) });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || "Could not analyze.");
+      if (mine === lv.seq) lvRender(d);                // ignore answers that arrive out of order
+    } catch (e) {
+      lvStatus(e.message);
+    }
+  }
+
+  function lvAdd(sentence) {
+    let t = sentence.trim().replace(/\s+/g, " ");
+    if (!t) return;
+    if (!/[.!?\u0964]$/.test(t)) t += ".";
+    lv.text = (lv.text ? lv.text + " " : "") + t;
+    lv.interim = "";
+    lvAnalyze();
+  }
+
+  function lvSetListening(on) {
+    lv.listening = on;
+    $("#lv-start").classList.toggle("listening", on);
+    $("#lv-start-label").textContent = on ? "Stop listening" : "Start listening";
+  }
+
+  function lvStopMic(msg = "Stopped") {
+    clearTimeout(lv.restartTimer);
+    const wasOn = lv.listening;
+    lvSetListening(false);
+    try { lv.rec && lv.rec.stop(); } catch { /* already stopped */ }
+    lv.interim = "";
+    lvDrawTranscript();
+    if (wasOn) lvStatus(msg);
+  }
+
+  function lvStartMic() {
+    if (!SpeechRec) { lvStatus("This browser has no speech recognition. Type a sentence below or play the demo."); return; }
+    lvStopDemo();
+    const rec = new SpeechRec();
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.lang = $("#lv-lang").value;
+    rec.onresult = (e) => {
+      let interim = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        const res = e.results[i];
+        if (res.isFinal) lvAdd(res[0].transcript);
+        else interim += res[0].transcript;
+      }
+      lv.interim = interim.trim();
+      lvDrawTranscript();
+    };
+    rec.onerror = (e) => {
+      if (e.error === "not-allowed" || e.error === "service-not-allowed") lvStopMic("Microphone permission was denied. Allow it in the browser, or type instead.");
+      else if (e.error !== "no-speech" && e.error !== "aborted") lvStatus("Speech recognition problem: " + e.error);
+    };
+    rec.onend = () => {                                 // browsers stop after a pause, so keep it running
+      if (lv.listening) lv.restartTimer = setTimeout(() => { try { rec.start(); } catch { /* already running */ } }, 250);
+    };
+    lv.rec = rec;
+    try { rec.start(); lvSetListening(true); lvStatus("Listening… speak naturally", true); }
+    catch { lvStatus("Could not start the microphone."); }
+  }
+
+  function lvStopDemo() { lv.demo++; }
+
+  async function lvRunDemo() {
+    lvStopMic();
+    lvClear();
+    const run = ++lv.demo;
+    lvStatus("Demo conversation playing…", true);
+    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
+    for (const line of DEMO_LINES) {
+      const chars = Array.from(line);
+      for (let i = 1; i <= chars.length; i++) {            // typed out like live speech
+        if (run !== lv.demo) return;
+        lv.interim = chars.slice(0, i).join("");
+        lvDrawTranscript();
+        await wait(26);
+      }
+      await wait(250);
+      if (run !== lv.demo) return;
+      lvAdd(line);
+      await wait(1900);
+    }
+    if (run === lv.demo) lvStatus("Demo finished");
+  }
+
+  function lvClear() {
+    lvStopDemo();
+    lv.text = ""; lv.interim = ""; lv.last = null; lv.seen = new Set();
+    lvAnalyze();
+    if (!lv.listening) lvStatus("Ready");
+  }
+
+  function bindLive() {
+    $("#lv-start").addEventListener("click", () => (lv.listening ? lvStopMic() : lvStartMic()));
+    $("#lv-demo").addEventListener("click", lvRunDemo);
+    $("#lv-clear").addEventListener("click", lvClear);
+    $("#lv-lang").addEventListener("change", () => { if (lv.listening) { lvStopMic("Language changed"); lvStartMic(); } });
+    $("#lv-form").addEventListener("submit", (e) => { e.preventDefault(); lvStopDemo(); lvAdd($("#lv-type").value); $("#lv-type").value = ""; });
+    window.addEventListener("hashchange", () => { if (location.hash !== "#live") { lvStopMic(); lvStopDemo(); } });   // never keep recording in the background
+  }
+
   /* ------------------------------------------------------------ compare visits */
   const CMP_SAMPLE = {
     before: "I have had fever and cough for 3 days, and a severe headache. No sore throat.",
@@ -885,6 +1050,7 @@
     bindReportDialog();
     bindCompare();
     bindPipeline();
+    bindLive();
     bindWelcome();
     bindSpotlight();
     bindLive();
