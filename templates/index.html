@@ -1,0 +1,280 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>SymptoScribe</title>
+  <meta name="description" content="A tool for doctors that turns a patient's description of their symptoms into a structured clinical note.">
+  <script>try{var t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600&family=Jost:wght@300;400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="cursor-glow" aria-hidden="true"></div>
+  <div class="glow" aria-hidden="true"><div class="g-top"></div><div class="g-arc"></div><i class="star st1"></i><i class="star st2"></i><i class="star st3"></i><i class="star st4"></i><i class="star st5"></i></div>
+  <a class="skip" href="#main">Skip to content</a>
+
+  <header class="top">
+    <a class="brand" href="#home" data-view="home">
+      <span class="brand-mark" aria-hidden="true"></span>
+      SymptoScribe
+    </a>
+    <nav aria-label="Sections" id="nav">
+      <a href="#home" data-view="home">Home</a>
+      <a href="#analyzer" data-view="analyzer">Analyzer</a>
+      <a href="#compare" data-view="compare">Compare</a>
+      <a href="#pipeline" data-view="pipeline">Pipeline</a>
+      <a href="#how" data-view="how">How it works</a>
+      <a href="#evaluation" data-view="evaluation">Evaluation</a>
+      <a href="#about" data-view="about">Limits and ethics</a>
+    </nav>
+    <div class="top-right">
+      <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch to light theme" title="Toggle light / dark">
+        <svg class="i-sun" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></svg>
+        <svg class="i-moon" viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main id="main">
+    <!-- ====================================================== WELCOME (own page, shown on every load) -->
+    <section id="view-welcome" class="view welcome" hidden>
+      <svg class="welcome-logo" viewBox="-40 -40 80 80" aria-hidden="true"><g class="lg-ring"><circle class="lg-dot" style="--tx:-26.0px;--ty:-0.0px;--d:0.00s" cx="26.0" cy="0.0" r="12"/><circle class="lg-dot" style="--tx:-13.0px;--ty:-22.52px;--d:0.09s" cx="13.0" cy="22.52" r="12"/><circle class="lg-dot" style="--tx:13.0px;--ty:-22.52px;--d:0.18s" cx="-13.0" cy="22.52" r="12"/><circle class="lg-dot" style="--tx:26.0px;--ty:-0.0px;--d:0.27s" cx="-26.0" cy="0.0" r="12"/><circle class="lg-dot" style="--tx:13.0px;--ty:22.52px;--d:0.36s" cx="-13.0" cy="-22.52" r="12"/><circle class="lg-dot" style="--tx:-13.0px;--ty:22.52px;--d:0.45s" cx="13.0" cy="-22.52" r="12"/></g><path class="lg-star" d="M0 -10 Q2.4 -2.4 10 0 Q2.4 2.4 0 10 Q-2.4 2.4 -10 0 Q-2.4 -2.4 0 -10Z"/></svg>
+      <h1 class="welcome-title">Welcome to SymptoScribe</h1>
+      <p class="welcome-lede">The doctor's first page, written before the appointment.</p>
+      <a class="hbtn solid welcome-cta" href="#home" id="welcome-go">Get Started</a>
+    </section>
+
+    <!-- ====================================================== HOME -->
+    <section id="view-home" class="view">
+      <div class="hero">
+        <span class="badge">✦ Built for doctors and clinics</span>
+        <h1 class="hero-title">Turn patient stories into notes, <br>and see what matters <em>fast</em></h1>
+        <div class="hero-actions">
+          <a class="hbtn solid" href="#analyzer" id="try-demo">Get Started</a>
+        </div>
+      </div>
+
+      <div class="benefits">
+        <span class="badge">ϟ How it works</span>
+        <h2 class="benefits-title">SymptoScribe: What Hurts,<br>Since When, and What Doesn't</h2>
+        <p class="benefits-sub">The details that matter, pulled out and ready to read.</p>
+        <div class="benefit-grid">
+          <article class="benefit"><span class="ico">▤</span><h3>Every fact is checkable</h3><p>Each detail is highlighted in the sentence it came from, so nothing is a black box.</p></article>
+          <article class="benefit"><span class="ico">⊘</span><h3>Knows what is not happening</h3><p>Negation, uncertainty and past episodes are handled, so "no fever" never becomes a fever.</p></article>
+          <article class="benefit"><span class="ico">⚑</span><h3>Safety first</h3><p>Simple red-flag rules surface what should not wait, and the tool never names a disease.</p></article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================== ANALYZER -->
+    <section id="view-analyzer" class="view" hidden>
+      <div class="window">
+      <div class="win-bar"><i></i><i></i><i></i><span>SymptoScribe · Analyzer</span></div>
+      <div class="workspace">
+        <div class="col-in">
+          <h2 class="section-title">Enter the patient's symptoms</h2>
+          <p class="lede">Type or dictate what the patient tells you. We find the symptoms, when they started, how bad they are, and what's not wrong.</p>
+
+          <label class="field-label" for="text">Patient's description</label>
+          <textarea id="text" rows="7" maxlength="5000" spellcheck="false" placeholder="Paste or dictate what the patient says, in English, Hinglish, हिन्दी or मराठी. For example: I have had a fever and a sore throat since yesterday, no cough."></textarea>
+          <div class="actions">
+            <button id="analyze" class="btn primary" type="button">Analyze text</button>
+            <button id="clear" class="btn" type="button">Clear</button>
+            <button id="mic" class="btn" type="button" aria-pressed="false" hidden>🎤 Speak</button>
+            <div class="examples dd" id="examples-dd">
+              <button type="button" class="dd-toggle" id="dd-toggle" aria-haspopup="listbox" aria-expanded="false" aria-controls="example-buttons">
+              <span>Try an example</span><span class="dd-caret" aria-hidden="true">▾</span>
+            </button>
+            <ul class="dd-menu" id="example-buttons" role="listbox" aria-label="Example texts" hidden></ul>
+          </div>
+          </div>
+          <div class="options-row" aria-label="Options">
+            <label class="opt" id="mic-opt" hidden>Dictation language
+              <select id="mic-lang" class="mic-lang"><option value="en-IN">English</option><option value="hi-IN">हिन्दी</option><option value="mr-IN">मराठी</option></select>
+            </label>
+            <label class="live"><input type="checkbox" id="live" checked> Live analysis</label>
+            <span id="count" class="count" aria-hidden="true">0 / 5000</span>
+          </div>
+
+          <div id="marked-wrap" class="marked-wrap" hidden>
+            <h2>Marked-up text</h2>
+            <p class="hint">Hover or click a highlight to see its row in the note.</p>
+            <p id="marked" class="marked"></p>
+            <ul id="legend" class="legend" aria-label="Colour key"></ul>
+          </div>
+        </div>
+
+        <div class="col-out" id="out" aria-live="polite">
+          <div class="empty" id="empty">
+            <p>The structured note appears here.</p>
+          </div>
+        </div>
+      </div>
+      <div id="trace-slot" class="trace-below"></div>
+      </div>
+
+    </section>
+
+    <!-- ====================================================== COMPARE VISITS -->
+    <section id="view-compare" class="view" hidden>
+      <div class="window">
+        <div class="win-bar"><i></i><i></i><i></i><span>SymptoScribe · Compare visits</span></div>
+        <h2 class="section-title">Compare two visits</h2>
+        <p class="lede">Paste what the patient said at the earlier visit and at the latest one. We show what is new, what went away and what changed.</p>
+        <div class="cmp-grid">
+          <div>
+            <label class="field-label" for="cmp-before">Earlier visit</label>
+            <textarea id="cmp-before" rows="6" maxlength="5000" spellcheck="false" placeholder="What the patient described last time"></textarea>
+          </div>
+          <div>
+            <label class="field-label" for="cmp-after">Latest visit</label>
+            <textarea id="cmp-after" rows="6" maxlength="5000" spellcheck="false" placeholder="What the patient describes now"></textarea>
+          </div>
+        </div>
+        <div class="actions">
+          <button id="cmp-run" class="btn primary" type="button">Compare visits</button>
+          <button id="cmp-sample" class="btn" type="button">Load sample</button>
+          <button id="cmp-clear" class="btn" type="button">Clear</button>
+        </div>
+        <div id="cmp-out" class="cmp-out" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <!-- ====================================================== PIPELINE VIEWER -->
+    <section id="view-pipeline" class="view" hidden>
+      <div class="window">
+        <div class="win-bar"><i></i><i></i><i></i><span>SymptoScribe · Pipeline viewer</span></div>
+        <h2 class="section-title">Watch the engine read a text</h2>
+        <p class="lede">Type a description and step through the eight stages one at a time: tokens first, then symptoms, negation, details and finally the note.</p>
+        <textarea id="pl-text" rows="3" maxlength="5000" spellcheck="false" placeholder="e.g. Headace and fevar since sunday, no cough. It gets worse after eating."></textarea>
+        <div class="actions">
+          <button id="pl-run" class="btn primary" type="button">Run pipeline</button>
+          <button id="pl-sample" class="btn" type="button">Sample text</button>
+          <button id="pl-use" class="btn" type="button">Use analyzer text</button>
+        </div>
+        <div id="pl-error" aria-live="polite"></div>
+        <div id="pl-stage" class="pl-stage" hidden>
+          <ol class="pl-steps" id="pl-steps" aria-label="Pipeline stages"></ol>
+          <div class="pl-card" id="pl-card" aria-live="polite"></div>
+          <div class="pl-controls">
+            <button class="btn" type="button" id="pl-prev">← Back</button>
+            <button class="btn primary" type="button" id="pl-next">Next step →</button>
+          </div>
+          <p class="pl-hint" id="pl-hint"></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ====================================================== HOW IT WORKS -->
+    <section id="view-how" class="view prose" hidden>
+      <div class="page-head"><span class="badge">ϟ How it works</span>
+      <h1>How the text becomes a note</h1>
+      <p class="lede">The engine is a transparent pipeline of language-processing steps. Each one can be explained, tested and improved on its own, which matters when the output is read by a doctor.</p></div>
+
+      <ol class="steps">
+        <li>
+          <h2>Clean and tokenise</h2>
+          <p>The text is split into sentences and words. Every word remembers where it started in the original text, so results can be highlighted exactly where the patient wrote them.</p>
+        </li>
+        <li>
+          <h2>Normalise spelling</h2>
+          <p>Common slips are corrected before matching: <code>fevar</code> becomes <code>fever</code>, <code>dont</code> becomes <code>don't</code>, <code>wks</code> becomes <code>weeks</code>.</p>
+        </li>
+        <li>
+          <h2>Find the symptoms</h2>
+          <p>Named entity recognition against a lexicon of about 40 symptoms and 300 phrasings in English and Hinglish (<code>bukhar</code>, <code>sar dard</code>, <code>pet me dard</code>). The longest phrase wins, plurals are handled, and unknown spellings are matched by edit distance. Patterns such as <em>pain in my chest</em> or <em>left arm hurts</em> find symptoms the lexicon does not list.</p>
+        </li>
+        <li>
+          <h2>Split into clauses</h2>
+          <p>Commas that separate ideas, <em>but</em>, and <em>and I</em> start a new clause, while commas inside a list (<em>fever, cough and cold</em>) do not. Clauses decide which details belong to which symptom.</p>
+        </li>
+        <li>
+          <h2>Decide the status of each symptom</h2>
+          <p>A symptom can be present, denied, uncertain, resolved, a past episode or someone else's. Negation uses a scope rule in the style of NegEx: <em>no</em> reaches every symptom in the list until a word like <em>but</em> ends it, while <em>no relief</em> and <em>not improving</em> are recognised as not being negations of a symptom. Hindi-style negation after the symptom (<em>khansi nahi hai</em>) is handled too.</p>
+        </li>
+        <li>
+          <h2>Extract the details</h2>
+          <p>Duration (<em>for a couple of weeks</em>, <em>2-3 days</em>, <em>since Sunday</em>, <em>kal se</em>), onset, frequency (<em>3 times a day</em>), severity (words, <em>7/10</em>, or a temperature reading), course (worsening, intermittent), triggers (<em>after eating</em>), body location, radiation and quality (sharp, burning).</p>
+        </li>
+        <li>
+          <h2>Link details to symptoms</h2>
+          <p>Details attach to the nearest symptom, a trailing detail covers the whole list (<em>fever and cough for 3 days</em>), and a sentence like <em>It started two days ago</em> is carried over to the symptom mentioned just before.</p>
+        </li>
+        <li>
+          <h2>Safety checks and the note</h2>
+          <p>Simple red-flag rules highlight what should not wait (chest pain, breathlessness, fever for 3 or more days, self-harm language). Missing details become follow-up questions, and a template writes the summary sentence. The tool never names a disease.</p>
+        </li>
+      </ol>
+
+      <div class="card"><h2 class="plain">Why rules and lexicons instead of a neural model?</h2>
+      <p>For a clinical note, a wrong answer should be explainable and fixable. Rules need no training data, behave the same every time, and show a reason for every decision (open <em>How the engine read this text</em> at the bottom of the analyzer). The evaluation tab measures how well they do. The natural next step is to train a model such as BioBERT or MuRIL on the same task and compare it against this baseline.</p></div>
+    </section>
+
+    <!-- ====================================================== EVALUATION -->
+    <section id="view-evaluation" class="view prose" hidden>
+      <div class="page-head"><span class="badge">✦ Evaluation</span>
+      <h1>How well does it work?</h1>
+      <p class="lede">The engine is run over a public dataset of 1,200 patient symptom descriptions. This page shows what it found. A small hand-marked set is kept only to check accuracy.</p></div>
+      <div id="dataset-body"><p class="muted">Reading the dataset…</p></div>
+      <details class="card accuracy">
+        <summary>Accuracy check on a small hand-marked set (91 texts)</summary>
+        <p class="muted acc-note">The public dataset has no marked answers for duration or severity, so accuracy scores come from this small set. Precision is how many of its answers were right, recall is how many of the true answers it found, and F1 balances both.</p>
+        <div id="eval-body"><p class="muted">Loading the evaluation…</p></div>
+      </details>
+    </section>
+
+    <!-- ====================================================== LIMITS -->
+    <section id="view-about" class="view prose" hidden>
+      <div class="page-head"><span class="badge">⚑ Limits and ethics</span>
+      <h1>Limits and ethics</h1>
+      <p class="lede">SymptoScribe organises what a patient wrote. It does not diagnose, prescribe or replace a doctor.</p></div>
+
+      <div class="card"><h2 class="plain">What it cannot do</h2>
+      <ul class="plain-list">
+        <li>It does not suggest causes or treatments. The red flags are coarse rules for attention, not clinical triage.</li>
+        <li>It understands English and romanised Hindi (Hinglish). Devanagari script, Marathi and other languages are not supported yet.</li>
+        <li>Symptoms outside its lexicon are missed unless they match a <em>pain in &lt;body part&gt;</em> pattern. A missing symptom is not proof that nothing was said.</li>
+        <li>Unusual sentence structures can attach a detail to the wrong symptom. Always check the marked-up text.</li>
+      </ul></div>
+
+      <div class="card"><h2 class="plain">Data</h2>
+        <p>The example cases and the coverage report on the Evaluation page use the public <a href="https://www.kaggle.com/datasets/niyarrbarman/symptom2disease" target="_blank" rel="noopener">Symptom2Disease</a> dataset from Kaggle (1,200 patient-style symptom descriptions). Its disease labels are never used or shown to patients: SymptoScribe organises symptoms and does not predict diseases.</p></div>
+      <div class="card"><h2 class="plain">Privacy</h2>
+      <p>The text is analysed in memory and not stored or sent anywhere else. Do not enter names, phone numbers or other identifying details when demonstrating the project.</p></div>
+
+      <div class="card"><h2 class="plain">If someone is in danger</h2>
+      <p>For chest pain, difficulty breathing, fainting, heavy bleeding or thoughts of self-harm, contact local emergency services right away. In India, Tele-MANAS offers free mental-health support on 14416 or 1-800-891-4416.</p></div>
+
+      <div class="card"><h2 class="plain">Future work</h2>
+      <ul class="plain-list">
+        <li>Train and compare a BioBERT or MuRIL token-classification model against this rule-based baseline.</li>
+        <li>Add Devanagari input and Marathi using AI4Bharat resources.</li>
+        <li>Add a patient-facing intake form that sends the finished note straight to the doctor.</li>
+        <li>Grow the annotated evaluation set with real, consented, anonymised examples.</li>
+      </ul></div>
+    </section>
+  </main>
+
+  <dialog id="report-dialog" class="modal modal-form" aria-labelledby="report-title">
+    <button class="modal-x" type="button" id="report-x" aria-label="Close">×</button>
+    <h2 id="report-title">Report details</h2>
+    <p class="modal-lede">Optional. These are printed on the PDF only. Nothing is saved or sent anywhere.</p>
+    <form id="report-form" autocomplete="off">
+      <label>Patient name<input id="rd-name" type="text" maxlength="80" placeholder="e.g. Asha Patil"></label>
+      <label>Age<input id="rd-age" type="text" inputmode="numeric" maxlength="3" placeholder="e.g. 34"></label>
+      <label>Date<input id="rd-date" type="date"></label>
+      <label>Doctor<input id="rd-doctor" type="text" maxlength="80" placeholder="e.g. Dr. Rao"></label>
+      <div class="modal-actions">
+        <button class="hbtn solid modal-cta" type="submit" id="rd-go">Download PDF</button>
+        <button class="hbtn ghost" type="button" id="rd-skip">Skip details</button>
+      </div>
+    </form>
+  </dialog>
+
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

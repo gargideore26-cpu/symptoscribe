@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+.venv/
+evaluation/results.json
+.DS_Store
+data/

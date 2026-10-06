@@ -1,0 +1,1838 @@
+{
+ "ref_date": "2026-10-05",
+ "conventions": {
+  "duration": "days, upper bound for ranges; since yesterday = 1; this morning / since morning = 0.5; since <weekday> = days back to that weekday (reference date 2026-10-05, a Monday)",
+  "severity": "mild / moderate / severe from the patient's wording; pain scale 1-3 mild, 4-7 moderate, 8-10 severe; temperature >= 39.4 C severe, 38-39.3 C moderate",
+  "trend": "worsening / improving / constant / intermittent / not improving / stable",
+  "triggers": "the activity or food that brings on, worsens or relieves the symptom, as written (stems compared)",
+  "location": "body part phrase attached to the symptom",
+  "subject": "'other' when the symptom belongs to someone else"
+ },
+ "cases": [
+  {
+   "id": "D01",
+   "set": "dev",
+   "text": "My stomach has been burning since Sunday and gets worse after eating. I also have a mild headache but no fever.",
+   "symptoms": [
+    {
+     "name": "stomach pain",
+     "days": 1,
+     "triggers": [
+      "eating"
+     ]
+    },
+    {
+     "name": "headache",
+     "severity": "mild"
+    },
+    {
+     "name": "fever",
+     "status": "absent"
+    }
+   ]
+  },
+  {
+   "id": "D02",
+   "set": "dev",
+   "text": "I have had fever, cough and cold for the past 4 days.",
+   "symptoms": [
+    {
+     "name": "fever",
+     "days": 4
+    },
+    {
+     "name": "cough",
+     "days": 4
+    },
+    {
+     "name": "cold",
+     "days": 4
+    }
+   ]
+  },
+  {
+   "id": "D03",
+   "set": "dev",
+   "text": "I don't have fever but I have a severe headache since yesterday.",
+   "symptoms": [
+    {
+     "name": "fever",
+     "status": "absent"
+    },
+    {
+     "name": "headache",
+     "days": 1,
+     "severity": "severe"
+    }
+   ]
+  },
+  {
+   "id": "D04",
+   "set": "dev",
+   "text": "No fever, cough or cold. Only a sore throat for 2 days.",
+   "symptoms": [
+    {
+     "name": "fever",
+     "status": "absent"
+    },
+    {
+     "name": "cough",
+     "status": "absent"
+    },
+    {
+     "name": "cold",
+     "status": "absent"
+    },
+    {
+     "name": "sore throat",
+     "days": 2
+    }
+   ]
+  },
+  {
+   "id": "D05",
+   "set": "dev",
+   "text": "Mujhe 2 din se bukhar hai aur sar dard bhi hai, khansi nahi hai.",
+   "symptoms": [
+    {
+     "name": "fever",
+     "days": 2
+    },
+    {
+     "name": "headache",
+     "days": 2
+    },
+    {
+     "name": "cough",
+     "status": "absent"
+    }
+   ]
+  },
+  {
+   "id": "D06",
+   "set": "dev",
+   "text": "I am a 45 year old male with chest pain radiating to my left arm, sharp, started this morning. I took paracetamol. I am diabetic.",
+   "symptoms": [
+    {
+     "name": "chest pain",
+     "days": 0.5
+    }
+   ]
+  },
+  {
+   "id": "D07",
+   "set": "dev",
+   "text": "I had typhoid 2 years ago. Now I have vomiting 3-4 times a day and loose motions since 2 days.",
+   "symptoms": [
+    {
+     "name": "vomiting"
+    },
+    {
+     "name": "diarrhea",
+     "days": 2
+    }
+   ]
+  },
+  {
+   "id": "D08",
+   "set": "dev",
+   "text": "Fever 101 F for a week. It is getting worse at night. Feeling weak and tired.",
+   "symptoms": [
+    {
+     "name": "fever",
+     "days": 7,
+     "severity": "moderate",
+     "triggers": [
+      "night"
+     ]
+    },
+    {
+     "name": "fatigue"
+    }
+   ]
+  },
+  {
+   "id": "D09",
+   "set": "dev",
+   "text": "Headace and fevar since sunday, body ache too.",
+   "symptoms": [
+    {
+     "name": "headache",
+     "days": 1
+    },
+    {
+     "name": "fever",
+     "days": 1
+    },
+    {
+     "name": "body ache"
+    }
+   ]
+  },
+  {
+   "id": "D10",
+   "set": "dev",
+   "text": "pain in my chest when I climb stairs, 7/10, comes and goes",
+   "symptoms": [
+    {
+     "name": "chest pain",
+     "severity": "moderate",
+     "trend": "intermittent",
+     "triggers": [
+      "climb stairs"
+     ],
+     "location": "chest"
+    }
+   ]
+  },
+  {
+   "id": "D11",
+   "set": "dev",
+   "text": "I have cough for 3 days. It is worse in the morning.",
+   "symptoms": [
+    {
+     "name": "cough",
+     "days": 3,
+     "triggers": [
+      "morning"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "D12",
+   "set": "dev",
+   "text": "Maybe I have a mild fever, not sure.",
+   "symptoms": [
+    {
+     "name": "fever",
+     "status": "uncertain"
+    }
+   ]
+  },
+  {
+   "id": "D13",
+   "set": "dev",
+   "text": "I did not eat anything and now my stomach hurts a lot since last night.",
+   "symptoms": [
+    {
+     "name": "stomach pain",
+     "days": 1,
+     "severity": "moderate"
+    }
+   ]
+  },
+  {
+   "id": "D14",
+   "set": "dev",
+   "text": "Severe headache and mild fever since 2 days, headache is worse at night",
+   "symptoms": [
+    {
+     "name": "headache",
+     "days": 2,
+     "severity": "severe",
+     "triggers": [
+      "night"
+     ]
+    },
+    {
+     "name": "fever",
+     "days": 2,
+     "severity": "mild"
+    }
+   ]
+  },
+  {
+   "id": "D15",
+   "set": "dev",
+   "text": "I'm feeling dizzy and nauseous after meals for a couple of weeks, no vomiting.",
+   "symptoms": [
+    {
+     "name": "dizziness",
+     "days": 14,
+     "triggers": [
+      "meals"
+     ]
+    },
+    {
+     "name": "nausea",
+     "days": 14,
+     "triggers": [
+      "meals"
+     ]
+    },
+    {
+     "name": "vomiting",
+     "status": "absent"
+    }
+   ]
+  },
+  {
+   "id": "D16",
+   "set": "dev",
+   "text": "Cold water makes my teeth hurt. I have a cold since 3 days.",
+   "symptoms": [
+    {
+     "name": "toothache",
+     "location": "teeth"
+    },
+    {
+     "name": "cold",
+     "days": 3
+    }
+   ]
+  },
+  {
+   "id": "D17",
+   "set": "dev",
+   "text": "My knee hurts when I walk and there is some swelling. Pain is dull and constant.",
+   "symptoms": [
+    {
+     "name": "joint pain",
+     "trend": "constant",
+     "triggers": [
+      "walk"
+     ],
+     "location": "knee"
+    },
+    {
+     "name": "swelling"
+    }
+   ]
+  },
+  {
+   "id": "D18",
+   "set": "dev",
+   "text": "I get a burning sensation while urinating, frequent urination, since 3 days",
+   "symptoms": [
+    {
+     "name": "burning urination",
+     "days": 3
+    },
+    {
+     "name": "frequent urination",
+     "days": 3
+    }
+   ]
+  },
+  {
+   "id": "D19",
+   "set": "dev",
+   "text": "chest tightness and breathlessness suddenly started 1 hour ago!!",
+   "symptoms": [
+    {
+     "name": "chest pain",
+     "days": 0.0417
+    },
+    {
+     "name": "shortness of breath",
+     "days": 0.0417
+    }
+   ]
+  },
+  {
+   "id": "D20",
+   "set": "dev",
+   "text": "Last night I vomited twice and I feel nauseous. The pain in my upper abdomen is 8/10.",
+   "symptoms": [
+    {
+     "name": "vomiting",
+     "days": 1
+    },
+    {
+     "name": "nausea"
+    },
+    {
+     "name": "stomach pain",
+     "severity": "severe",
+     "location": "upper abdomen"
+    }
+   ]
+  },
+  {
+   "id": "D21",
+   "set": "dev",
+   "text": "After lunch I get acidity and bloating, relieved by antacid. It has been going on for about 6 months.",
+   "symptoms": [
+    {
+     "name": "acidity",
+     "days": 180,
+     "triggers": [
+      "lunch",
+      "antacid"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "D22",
+   "set": "dev",
+   "text": "She has cough and fever since 2 days",
+   "symptoms": [
+    {
+     "name": "cough",
+     "subject": "other"
+    },
+    {
+     "name": "fever",
+     "subject": "other"
+    }
+   ]
+  },
+  {
+   "id": "D23",
+   "set": "dev",
+   "text": "Dizzy and fainted yesterday",
+   "symptoms": [
+    {
+     "name": "dizziness",
+     "days": 1
+    },
+    {
+     "name": "fainting",
+     "days": 1
+    }
+   ]
+  },
+  {
+   "id": "D24",
+   "set": "dev",
+   "text": "Doctor, my head is paining and I am vomiting since morning. No loose motions.",
+   "symptoms": [
+    {
+     "name": "headache"
+    },
+    {
+     "name": "vomiting",
+     "days": 0.5
+    },
+    {
+     "name": "diarrhea",
+     "status": "absent"
+    }
+   ]
+  },
+  {
+   "id": "D25",
+   "set": "dev",
+   "text": "I have not been having any fever or cough but my throat is paining for 4 days",
+   "symptoms": [
+    {
+     "name": "fever",
+     "status": "absent"
+    },
+    {
+     "name": "cough",
+     "status": "absent"
+    },
+    {
+     "name": "sore throat",
+     "days": 4
+    }
+   ]
+  },
+  {
+   "id": "D26",
+   "set": "dev",
+   "text": "My stomach pain is not getting better.",
+   "symptoms": [
+    {
+     "name": "stomach pain",
+     "trend": "not improving"
+    }
+   ]
+  },
+  {
+   "id": "D27",
+   "set": "dev",
+   "text": "I have severe back pain that shoots down my right leg for the last 2 months, worse when bending",
+   "symptoms": [
+    {
+     "name": "back pain",
+     "days": 60,
+     "severity": "severe",
+     "triggers": [
+      "bending"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "D28",
+   "set": "dev",
+   "text": "bukhar 3 din se, sardi, thoda sar dard. kal se khansi bhi.",
+   "symptoms": [
+    {
+     "name": "fever",
+     "days": 3
+    },
+    {
+     "name": "cold"
+    },
+    {
+     "name": "headache",
+     "severity": "mild"
+    },
+    {
+     "name": "cough",
+     "days": 1
+    }
+   ]
+  },
+  {
+   "id": "D29",
+   "set": "dev",
+   "text": "I think I might have a cough. My wife has a fever.",
+   "symptoms": [
+    {
+     "name": "cough",
+     "status": "uncertain"
+    },
+    {
+     "name": "fever",
+     "subject": "other"
+    }
+   ]
+  },
+  {
+   "id": "D30",
+   "set": "dev",
+   "text": "Hi, I feel good today.",
+   "symptoms": []
+  },
+  {
+   "id": "D31",
+   "set": "dev",
+   "text": "no pain, no fever",
+   "symptoms": [
+    {
+     "name": "pain",
+     "status": "absent"
+    },
+    {
+     "name": "fever",
+     "status": "absent"
+    }
+   ]
+  },
+  {
+   "id": "H01",
+   "set": "heldout",
+   "text": "I've been coughing for two weeks and it's worse at night. No fever.",
+   "symptoms": [
+    {
+     "name": "cough",
+     "days": 14,
+     "triggers": [
+      "night"
+     ]
+    },
+    {
+     "name": "fever",
+     "status": "absent"
+    }
+   ]
+  },
+  {
+   "id": "H02",
+   "set": "heldout",
+   "text": "Since last Friday I have a headache and nausea.",
+   "symptoms": [
+    {
+     "name": "headache",
+     "days": 3
+    },
+    {
+     "name": "nausea",
+     "days": 3
+    }
+   ]
+  },
+  {
+   "id": "H03",
+   "set": "heldout",
+   "text": "Doctor, I have severe pain in my lower back for 5 days, worse when I bend.",
+   "symptoms": [
+    {
+     "name": "back pain",
+     "days": 5,
+     "severity": "severe",
+     "location": "lower back",
+     "triggers": [
+      "bend"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "H04",
+   "set": "heldout",
+   "text": "No chest pain or shortness of breath, just a mild cough since morning.",
+   "symptoms": [
+    {
+     "name": "chest pain",
+     "status": "absent"
+    },
+    {
+     "name": "shortness of breath",
+     "status": "absent"
+    },
+    {
+     "name": "cough",
+     "days": 0.5,
+     "severity": "mild"
+    }
+   ]
+  },
+  {
+   "id": "H05",
+   "set": "heldout",
+   "text": "My 6 year old son has fever and a runny nose since 2 days. I am fine.",
+   "symptoms": [
+    {
+     "name": "fever",
+     "subject": "other"
+    },
+    {
+     "name": "cold",
+     "subject": "other"
+    }
+   ]
+  },
+  {
+   "id": "H06",
+   "set": "heldout",
+   "text": "I feel dizzy whenever I stand up quickly. This has been happening for about a month.",
+   "symptoms": [
+    {
+     "name": "dizziness",
+     "days": 30,
+     "triggers": [
+      "stand up"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "H07",
+   "set": "heldout",
+   "text": "I have a rash on my arms that is itchy, started 3 days ago.",
+   "symptoms": [
+    {
+     "name": "rash",
+     "days": 3,
+     "location": "arms"
+    },
+    {
+     "name": "itching",
+     "days": 3
+    }
+   ]
+  },
+  {
+   "id": "H08",
+   "set": "heldout",
+   "text": "My throat hurts when I swallow and I have a mild fever.",
+   "symptoms": [
+    {
+     "name": "sore throat",
+     "triggers": [
+      "swallow"
+     ]
+    },
+    {
+     "name": "fever",
+     "severity": "mild"
+    }
+   ]
+  },
+  {
+   "id": "H09",
+   "set": "heldout",
+   "text": "Pain in my right knee for 3 months, it is constant and gets worse when climbing stairs.",
+   "symptoms": [
+    {
+     "name": "joint pain",
+     "days": 90,
+     "trend": "constant",
+     "triggers": [
+      "climbing stairs"
+     ],
+     "location": "right knee"
+    }
+   ]
+  },
+  {
+   "id": "H10",
+   "set": "heldout",
+   "text": "Persistent dry cough for the last 10 days and sore throat.",
+   "symptoms": [
+    {
+     "name": "cough",
+     "days": 10,
+     "trend": "constant"
+    },
+    {
+     "name": "sore throat"
+    }
+   ]
+  },
+  {
+   "id": "H11",
+   "set": "heldout",
+   "text": "I woke up with a severe headache this morning and vomited twice.",
+   "symptoms": [
+    {
+     "name": "headache",
+     "days": 0.5,
+     "severity": "severe"
+    },
+    {
+     "name": "vomiting"
+    }
+   ]
+  },
+  {
+   "id": "H12",
+   "set": "heldout",
+   "text": "Both my legs are swollen and I get breathless on climbing stairs.",
+   "symptoms": [
+    {
+     "name": "swelling",
+     "location": "legs"
+    },
+    {
+     "name": "shortness of breath",
+     "triggers": [
+      "climbing stairs"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "H13",
+   "set": "heldout",
+   "text": "No blood in stool. Occasional stomach cramps after spicy food.",
+   "symptoms": [
+    {
+     "name": "bleeding",
+     "status": "absent"
+    },
+    {
+     "name": "stomach pain",
+     "trend": "intermittent",
+     "triggers": [
+      "spicy food"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "H14",
+   "set": "heldout",
+   "text": "I used to have migraines in college. Right now I just have a mild headache since Saturday.",
+   "symptoms": [
+    {
+     "name": "headache",
+     "status": "history"
+    },
+    {
+     "name": "headache",
+     "days": 2,
+     "severity": "mild"
+    }
+   ]
+  },
+  {
+   "id": "H15",
+   "set": "heldout",
+   "text": "High fever of 103 F with shivering since last night.",
+   "symptoms": [
+    {
+     "name": "fever",
+     "days": 1,
+     "severity": "severe"
+    },
+    {
+     "name": "chills",
+     "days": 1
+    }
+   ]
+  },
+  {
+   "id": "H16",
+   "set": "heldout",
+   "text": "Itchy eyes and runny nose, sneezing every morning for a week.",
+   "symptoms": [
+    {
+     "name": "itching",
+     "days": 7,
+     "location": "eyes"
+    },
+    {
+     "name": "cold",
+     "days": 7
+    }
+   ]
+  },
+  {
+   "id": "H17",
+   "set": "heldout",
+   "text": "She complained of chest pain.",
+   "symptoms": [
+    {
+     "name": "chest pain",
+     "subject": "other"
+    }
+   ]
+  },
+  {
+   "id": "H18",
+   "set": "heldout",
+   "text": "Pet me dard hai aur loose motion bhi, teen din se.",
+   "symptoms": [
+    {
+     "name": "stomach pain",
+     "days": 3
+    },
+    {
+     "name": "diarrhea",
+     "days": 3
+    }
+   ]
+  },
+  {
+   "id": "H19",
+   "set": "heldout",
+   "text": "Mujhe bahut tez sar dard hai aur ulti jaisa lag raha hai.",
+   "symptoms": [
+    {
+     "name": "headache",
+     "severity": "severe"
+    },
+    {
+     "name": "nausea"
+    }
+   ]
+  },
+  {
+   "id": "H20",
+   "set": "heldout",
+   "text": "Headche and nausious since 2 days, no diarreha.",
+   "symptoms": [
+    {
+     "name": "headache",
+     "days": 2
+    },
+    {
+     "name": "nausea",
+     "days": 2
+    },
+    {
+     "name": "diarrhea",
+     "status": "absent"
+    }
+   ]
+  },
+  {
+   "id": "H21",
+   "set": "heldout",
+   "text": "Is it normal that my stomach hurts after I eat dairy? It started a few days ago.",
+   "symptoms": [
+    {
+     "name": "stomach pain",
+     "days": 3,
+     "triggers": [
+      "eat dairy"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "H22",
+   "set": "heldout",
+   "text": "Left side of my chest hurts when I take a deep breath.",
+   "symptoms": [
+    {
+     "name": "chest pain",
+     "location": "left side",
+     "triggers": [
+      "deep breath"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "H23",
+   "set": "heldout",
+   "text": "There is no swelling or rash, but I am itching all over.",
+   "symptoms": [
+    {
+     "name": "swelling",
+     "status": "absent"
+    },
+    {
+     "name": "rash",
+     "status": "absent"
+    },
+    {
+     "name": "itching"
+    }
+   ]
+  },
+  {
+   "id": "H24",
+   "set": "heldout",
+   "text": "Cough with blood in sputum since 3 days.",
+   "symptoms": [
+    {
+     "name": "cough",
+     "days": 3
+    },
+    {
+     "name": "bleeding",
+     "days": 3
+    }
+   ]
+  },
+  {
+   "id": "H25",
+   "set": "heldout",
+   "text": "Doctor I get severe palpitations when I climb stairs, comes and goes.",
+   "symptoms": [
+    {
+     "name": "palpitations",
+     "severity": "severe",
+     "trend": "intermittent",
+     "triggers": [
+      "climb stairs"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "H26",
+   "set": "heldout",
+   "text": "Not able to sleep properly for 2 weeks.",
+   "symptoms": [
+    {
+     "name": "insomnia",
+     "days": 14
+    }
+   ]
+  },
+  {
+   "id": "H27",
+   "set": "heldout",
+   "text": "My son is complaining of ear pain and has a fever since last night.",
+   "symptoms": [
+    {
+     "name": "ear pain",
+     "subject": "other"
+    },
+    {
+     "name": "fever",
+     "subject": "other"
+    }
+   ]
+  },
+  {
+   "id": "H28",
+   "set": "heldout",
+   "text": "He has no fever.",
+   "symptoms": [
+    {
+     "name": "fever",
+     "status": "absent",
+     "subject": "other"
+    }
+   ]
+  },
+  {
+   "id": "H29",
+   "set": "heldout",
+   "text": "I am suffering from loose motions and vomiting since 2 days and I feel very dehydrated.",
+   "symptoms": [
+    {
+     "name": "diarrhea",
+     "days": 2
+    },
+    {
+     "name": "vomiting",
+     "days": 2
+    }
+   ]
+  },
+  {
+   "id": "H30",
+   "set": "heldout",
+   "text": "7/10 pain in my upper abdomen after eating oily food.",
+   "symptoms": [
+    {
+     "name": "stomach pain",
+     "severity": "moderate",
+     "location": "upper abdomen",
+     "triggers": [
+      "eating oily food"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "H31",
+   "set": "heldout",
+   "text": "The headache is 9 out of 10.",
+   "symptoms": [
+    {
+     "name": "headache",
+     "severity": "severe"
+    }
+   ]
+  },
+  {
+   "id": "H32",
+   "set": "heldout",
+   "text": "I feel good and have no complaints today.",
+   "symptoms": []
+  },
+  {
+   "id": "H33",
+   "set": "heldout",
+   "text": "I have an appointment at 5 pm to discuss my reports.",
+   "symptoms": []
+  },
+  {
+   "id": "H34",
+   "set": "heldout",
+   "text": "I am tired of waiting in this queue.",
+   "symptoms": []
+  },
+  {
+   "id": "H35",
+   "set": "heldout",
+   "text": "Feeling feverish and weak for the last 3 days, taking paracetamol.",
+   "symptoms": [
+    {
+     "name": "fever",
+     "days": 3
+    },
+    {
+     "name": "fatigue",
+     "days": 3
+    }
+   ]
+  },
+  {
+   "id": "H36",
+   "set": "heldout",
+   "text": "I get a sharp pain in my left arm and numbness in my fingers, mostly at night.",
+   "symptoms": [
+    {
+     "name": "left arm pain",
+     "location": "left arm",
+     "triggers": [
+      "night"
+     ]
+    },
+    {
+     "name": "numbness",
+     "location": "fingers",
+     "triggers": [
+      "night"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "H37",
+   "set": "heldout",
+   "text": "Loose stools 6 times today with severe stomach pain.",
+   "symptoms": [
+    {
+     "name": "diarrhea"
+    },
+    {
+     "name": "stomach pain",
+     "severity": "severe"
+    }
+   ]
+  },
+  {
+   "id": "H38",
+   "set": "heldout",
+   "text": "I have been having a stuffy nose and mild sore throat since Tuesday.",
+   "symptoms": [
+    {
+     "name": "cold",
+     "days": 6
+    },
+    {
+     "name": "sore throat",
+     "days": 6,
+     "severity": "mild"
+    }
+   ]
+  },
+  {
+   "id": "H39",
+   "set": "heldout",
+   "text": "No headache, no dizziness, no fever, nothing at all.",
+   "symptoms": [
+    {
+     "name": "headache",
+     "status": "absent"
+    },
+    {
+     "name": "dizziness",
+     "status": "absent"
+    },
+    {
+     "name": "fever",
+     "status": "absent"
+    }
+   ]
+  },
+  {
+   "id": "H40",
+   "set": "heldout",
+   "text": "My mother has had a bad cough for a week.",
+   "symptoms": [
+    {
+     "name": "cough",
+     "subject": "other"
+    }
+   ]
+  },
+  {
+   "id": "H41",
+   "set": "heldout",
+   "text": "For the past 5 days I have been constipated.",
+   "symptoms": [
+    {
+     "name": "constipation",
+     "days": 5
+    }
+   ]
+  },
+  {
+   "id": "H42",
+   "set": "heldout",
+   "text": "I cannot taste or smell anything since 2 days and have a mild fever.",
+   "symptoms": [
+    {
+     "name": "loss of taste or smell",
+     "days": 2
+    },
+    {
+     "name": "fever",
+     "severity": "mild"
+    }
+   ]
+  },
+  {
+   "id": "C01",
+   "set": "challenge",
+   "text": "Hello doctor, since last week I have been getting this weird pain in my stomach, mostly after I eat. Sometimes it burns and sometimes it feels like cramps. Also had loose motions yesterday but no vomiting. I am worried because my father had ulcers.",
+   "symptoms": [
+    {
+     "name": "stomach pain",
+     "days": 7,
+     "trend": "intermittent",
+     "triggers": [
+      "eat"
+     ],
+     "location": "stomach"
+    },
+    {
+     "name": "diarrhea",
+     "days": 1
+    },
+    {
+     "name": "vomiting",
+     "status": "absent"
+    }
+   ]
+  },
+  {
+   "id": "C02",
+   "set": "challenge",
+   "text": "i dont know whats wrong. my head feels heavy, i get dizzy when i stand and my vision goes blurry for a few seconds. been like this for around 3 days",
+   "symptoms": [
+    {
+     "name": "dizziness",
+     "days": 3,
+     "triggers": [
+      "stand"
+     ]
+    },
+    {
+     "name": "blurred vision",
+     "days": 3
+    }
+   ]
+  },
+  {
+   "id": "C03",
+   "set": "challenge",
+   "text": "My daughter (age 4) has had a high fever for two days, she is not eating and keeps crying when she coughs. No rash.",
+   "symptoms": [
+    {
+     "name": "fever",
+     "subject": "other"
+    },
+    {
+     "name": "loss of appetite",
+     "subject": "other"
+    },
+    {
+     "name": "cough",
+     "subject": "other"
+    },
+    {
+     "name": "rash",
+     "status": "absent",
+     "subject": "other"
+    }
+   ]
+  },
+  {
+   "id": "C04",
+   "set": "challenge",
+   "text": "Pain in my chest on the left side, not sharp but heavy like pressure, started around 6 pm and still there. A bit sweaty also. No arm pain.",
+   "symptoms": [
+    {
+     "name": "chest pain",
+     "location": "left side"
+    },
+    {
+     "name": "sweating",
+     "severity": "mild"
+    },
+    {
+     "name": "arm pain",
+     "status": "absent"
+    }
+   ]
+  },
+  {
+   "id": "C05",
+   "set": "challenge",
+   "text": "Having cold and cough for 10 days now, antibiotics didnt help. Cough is mostly dry, worse at night, and now there's a fever of 100.4 since yesterday evening.",
+   "symptoms": [
+    {
+     "name": "cold",
+     "days": 10
+    },
+    {
+     "name": "cough",
+     "days": 10,
+     "triggers": [
+      "night"
+     ]
+    },
+    {
+     "name": "fever",
+     "days": 1,
+     "severity": "moderate"
+    }
+   ]
+  },
+  {
+   "id": "C06",
+   "set": "challenge",
+   "text": "Mild itching in both eyes and sneezing a lot, happens every spring, started again 2 weeks back.",
+   "symptoms": [
+    {
+     "name": "itching",
+     "days": 14,
+     "severity": "mild",
+     "location": "eyes"
+    },
+    {
+     "name": "cold",
+     "days": 14,
+     "severity": "moderate"
+    }
+   ]
+  },
+  {
+   "id": "C07",
+   "set": "challenge",
+   "text": "I've lost around 5 kg in the last 2 months without trying, feeling tired all the time and no appetite.",
+   "symptoms": [
+    {
+     "name": "weight loss",
+     "days": 60
+    },
+    {
+     "name": "fatigue",
+     "trend": "constant"
+    },
+    {
+     "name": "loss of appetite"
+    }
+   ]
+  },
+  {
+   "id": "C08",
+   "set": "challenge",
+   "text": "Woke up at 3am with severe pain in my right side of the abdomen, vomited twice, now it's a bit better but still hurts when I press on it.",
+   "symptoms": [
+    {
+     "name": "stomach pain",
+     "severity": "severe",
+     "trend": "improving",
+     "location": "right side of the abdomen"
+    },
+    {
+     "name": "vomiting"
+    }
+   ]
+  },
+  {
+   "id": "C09",
+   "set": "challenge",
+   "text": "Patient is a 60 year old woman with high BP and sugar. Complains of burning feet and numbness for 6 months, worse at night.",
+   "symptoms": [
+    {
+     "name": "feet pain",
+     "days": 180,
+     "location": "feet",
+     "triggers": [
+      "night"
+     ]
+    },
+    {
+     "name": "numbness",
+     "days": 180,
+     "triggers": [
+      "night"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "C10",
+   "set": "challenge",
+   "text": "No fever or chills now but I had both last week. Still have a runny nose and sore throat.",
+   "symptoms": [
+    {
+     "name": "fever",
+     "status": "absent"
+    },
+    {
+     "name": "chills",
+     "status": "absent"
+    },
+    {
+     "name": "cold"
+    },
+    {
+     "name": "sore throat"
+    }
+   ]
+  },
+  {
+   "id": "C11",
+   "set": "challenge",
+   "text": "My knees ache and the joints feel stiff especially in the morning for about 3 weeks. Taking ibuprofen helps a bit.",
+   "symptoms": [
+    {
+     "name": "joint pain",
+     "days": 21,
+     "location": "knees",
+     "triggers": [
+      "morning",
+      "ibuprofen"
+     ]
+    }
+   ]
+  },
+  {
+   "id": "C12",
+   "set": "challenge",
+   "text": "Everytime I eat spicy food I get severe acidity and sometimes vomit. It's been 2 months.",
+   "symptoms": [
+    {
+     "name": "acidity",
+     "days": 60,
+     "severity": "severe",
+     "triggers": [
+      "spicy food"
+     ]
+    },
+    {
+     "name": "vomiting",
+     "days": 60,
+     "trend": "intermittent"
+    }
+   ]
+  },
+  {
+   "id": "C13",
+   "set": "challenge",
+   "text": "I'm 28 and pregnant, 12 weeks. Last 3 days nausea and vomiting 5-6 times a day, can't keep anything down, feeling dizzy.",
+   "symptoms": [
+    {
+     "name": "nausea",
+     "days": 3
+    },
+    {
+     "name": "vomiting",
+     "days": 3
+    },
+    {
+     "name": "dizziness"
+    }
+   ]
+  },
+  {
+   "id": "C14",
+   "set": "challenge",
+   "text": "Hi. Not feeling well. Body is paining, throat is sore, and I have a temperature of 38.5 C since Sunday. Took Dolo 650 twice but fever returns.",
+   "symptoms": [
+    {
+     "name": "body ache"
+    },
+    {
+     "name": "sore throat",
+     "location": "throat"
+    },
+    {
+     "name": "fever",
+     "days": 1,
+     "severity": "moderate"
+    }
+   ]
+  },
+  {
+   "id": "C15",
+   "set": "challenge",
+   "text": "doc my 70 yr old father fell yesterday and now his back hurts a lot and he cannot walk properly",
+   "symptoms": [
+    {
+     "name": "back pain",
+     "subject": "other"
+    }
+   ]
+  },
+  {
+   "id": "C16",
+   "set": "challenge",
+   "text": "Since the surgery 3 days ago I have pain at the wound site, swelling and some redness and mild fever.",
+   "symptoms": [
+    {
+     "name": "pain",
+     "days": 3
+    },
+    {
+     "name": "swelling",
+     "days": 3
+    },
+    {
+     "name": "fever",
+     "days": 3,
+     "severity": "mild"
+    }
+   ]
+  },
+  {
+   "id": "C17",
+   "set": "challenge",
+   "text": "No cough, no cold, no fever, but my throat hurts and I am feeling weak since morning.",
+   "symptoms": [
+    {
+     "name": "cough",
+     "status": "absent"
+    },
+    {
+     "name": "cold",
+     "status": "absent"
+    },
+    {
+     "name": "fever",
+     "status": "absent"
+    },
+    {
+     "name": "sore throat",
+     "days": 0.5
+    },
+    {
+     "name": "fatigue",
+     "days": 0.5
+    }
+   ]
+  },
+  {
+   "id": "C18",
+   "set": "challenge",
+   "text": "Doctor sahab, mujhe teen din se pet me dard aur ulti ho rahi hai, bukhar nahi hai. Kal raat se loose motion bhi shuru ho gaya.",
+   "symptoms": [
+    {
+     "name": "stomach pain",
+     "days": 3
+    },
+    {
+     "name": "vomiting",
+     "days": 3
+    },
+    {
+     "name": "fever",
+     "status": "absent"
+    },
+    {
+     "name": "diarrhea",
+     "days": 1
+    }
+   ]
+  },
+  {
+   "id": "H01",
+   "set": "indic",
+   "text": "मुझे 2 दिन से बुखार है और सिरदर्द भी है, खांसी नहीं है।",
+   "symptoms": [
+    {
+     "name": "fever",
+     "days": 2
+    },
+    {
+     "name": "headache",
+     "days": 2
+    },
+    {
+     "name": "cough",
+     "status": "absent"
+    }
+   ]
+  },
+  {
+   "id": "H02",
+   "set": "indic",
+   "text": "मुझे तीन दिन से तेज बुखार है, बदन दर्द और कमजोरी है। उल्टी नहीं है।",
+   "symptoms": [
+    {
+     "name": "fever",
+     "days": 3,
+     "severity": "moderate"
+    },
+    {
+     "name": "body ache",
+     "days": 3
+    },
+    {
+     "name": "fatigue",
+     "days": 3
+    },
+    {
+     "name": "vomiting",
+     "status": "absent"
+    }
+   ]
+  },
+  {
+   "id": "H03",
+   "set": "indic",
+   "text": "गले में खराश है और खांसी दो हफ्ते से है, बुखार नहीं है।",
+   "symptoms": [
+    {
+     "name": "sore throat",
+     "days": 14
+    },
+    {
+     "name": "cough",
+     "days": 14
+    },
+    {
+     "name": "fever",
+     "status": "absent"
+    }
+   ]
+  },
+  {
+   "id": "H04",
+   "set": "indic",
+   "text": "मुझे कल से खांसी और जुकाम है, थोड़ा सिर दर्द भी है।",
+   "symptoms": [
+    {
+     "name": "cough",
+     "days": 1
+    },
+    {
+     "name": "cold",
+     "days": 1
+    },
+    {
+     "name": "headache",
+     "severity": "mild"
+    }
+   ]
+  },
+  {
+   "id": "H05",
+   "set": "indic",
+   "text": "पेट में दर्द है और उल्टी हो रही है, दस्त नहीं है।",
+   "symptoms": [
+    {
+     "name": "stomach pain"
+    },
+    {
+     "name": "vomiting"
+    },
+    {
+     "name": "diarrhea",
+     "status": "absent"
+    }
+   ]
+  },
+  {
+   "id": "H06",
+   "set": "indic",
+   "text": "मेरे बेटे को बुखार है। मुझे खांसी है।",
+   "symptoms": [
+    {
+     "name": "fever",
+     "subject": "other"
+    },
+    {
+     "name": "cough"
+    }
+   ]
+  },
+  {
+   "id": "H07",
+   "set": "indic",
+   "text": "मुझे थकान और चक्कर आ रहे हैं, भूख नहीं लग रही।",
+   "symptoms": [
+    {
+     "name": "fatigue"
+    },
+    {
+     "name": "dizziness"
+    },
+    {
+     "name": "loss of appetite"
+    }
+   ]
+  },
+  {
+   "id": "H08",
+   "set": "indic",
+   "text": "सीने में दर्द है और सांस फूल रही है।",
+   "symptoms": [
+    {
+     "name": "chest pain"
+    },
+    {
+     "name": "shortness of breath"
+    }
+   ]
+  },
+  {
+   "id": "H09",
+   "set": "indic",
+   "text": "पेशाब में जलन है और बार बार पेशाब आ रहा है।",
+   "symptoms": [
+    {
+     "name": "burning urination"
+    },
+    {
+     "name": "frequent urination"
+    }
+   ]
+  },
+  {
+   "id": "H10",
+   "set": "indic",
+   "text": "मुझे 4 दिन से बुखार है, ठंड लगना और पसीना भी है।",
+   "symptoms": [
+    {
+     "name": "fever",
+     "days": 4
+    },
+    {
+     "name": "chills"
+    },
+    {
+     "name": "sweating"
+    }
+   ]
+  },
+  {
+   "id": "M01",
+   "set": "indic",
+   "text": "मला २ दिवसांपासून ताप आहे आणि डोकेदुखी आहे, खोकला नाही.",
+   "symptoms": [
+    {
+     "name": "fever",
+     "days": 2
+    },
+    {
+     "name": "headache",
+     "days": 2
+    },
+    {
+     "name": "cough",
+     "status": "absent"
+    }
+   ]
+  },
+  {
+   "id": "M02",
+   "set": "indic",
+   "text": "मला ३ दिवसांपासून ताप आहे, अंगदुखी आणि थकवा आहे. जुलाब नाही.",
+   "symptoms": [
+    {
+     "name": "fever",
+     "days": 3
+    },
+    {
+     "name": "body ache",
+     "days": 3
+    },
+    {
+     "name": "fatigue",
+     "days": 3
+    },
+    {
+     "name": "diarrhea",
+     "status": "absent"
+    }
+   ]
+  },
+  {
+   "id": "M03",
+   "set": "indic",
+   "text": "माझ्या पोटात दुखत आहे आणि मळमळ होत आहे. कालपासून उलट्या सुरू आहेत.",
+   "symptoms": [
+    {
+     "name": "stomach pain"
+    },
+    {
+     "name": "nausea"
+    },
+    {
+     "name": "vomiting",
+     "days": 1
+    }
+   ]
+  },
+  {
+   "id": "M04",
+   "set": "indic",
+   "text": "मला एका आठवड्यापासून पाठदुखी आहे, वाढत आहे.",
+   "symptoms": [
+    {
+     "name": "back pain",
+     "days": 7,
+     "trend": "worsening"
+    }
+   ]
+  },
+  {
+   "id": "M05",
+   "set": "indic",
+   "text": "मला झोप येत नाही आणि चिंता वाटते.",
+   "symptoms": [
+    {
+     "name": "insomnia"
+    },
+    {
+     "name": "anxiety"
+    }
+   ]
+  },
+  {
+   "id": "M06",
+   "set": "indic",
+   "text": "माझ्या मुलाला ताप आहे. मला खोकला आहे.",
+   "symptoms": [
+    {
+     "name": "fever",
+     "subject": "other"
+    },
+    {
+     "name": "cough"
+    }
+   ]
+  },
+  {
+   "id": "M07",
+   "set": "indic",
+   "text": "मला छातीत दुखत आहे आणि धाप लागत आहे.",
+   "symptoms": [
+    {
+     "name": "chest pain"
+    },
+    {
+     "name": "shortness of breath"
+    }
+   ]
+  },
+  {
+   "id": "M08",
+   "set": "indic",
+   "text": "मला १० दिवसांपासून खोकला आहे, ताप नाही.",
+   "symptoms": [
+    {
+     "name": "cough",
+     "days": 10
+    },
+    {
+     "name": "fever",
+     "status": "absent"
+    }
+   ]
+  },
+  {
+   "id": "M09",
+   "set": "indic",
+   "text": "डोकेदुखी आणि सर्दी आहे, ताप नाही, घसा दुखत आहे.",
+   "symptoms": [
+    {
+     "name": "headache"
+    },
+    {
+     "name": "cold"
+    },
+    {
+     "name": "fever",
+     "status": "absent"
+    },
+    {
+     "name": "sore throat"
+    }
+   ]
+  },
+  {
+   "id": "M10",
+   "set": "indic",
+   "text": "मला कालपासून जुलाब आणि उलट्या आहेत.",
+   "symptoms": [
+    {
+     "name": "diarrhea",
+     "days": 1
+    },
+    {
+     "name": "vomiting",
+     "days": 1
+    }
+   ]
+  }
+ ],
+ "history": {
+  "heldout_first_run": {
+   "found_and_status_f1": 0.949,
+   "precision": 0.956,
+   "recall": 0.942,
+   "details_micro_f1": 0.962,
+   "comment": "Score on the held-out set the first time it was run. One round of error analysis followed and the rules were fixed, so that set is now a development set."
+  },
+  "challenge_policy": "The challenge set was annotated before it was ever run and the rules have not been tuned on it. Its score shows what to expect on messier, paragraph-style text.",
+  "challenge_first_run": {
+   "found_and_status_f1": 0.929,
+   "precision": 0.939,
+   "recall": 0.92,
+   "comment": "First run on the challenge set. Afterwards two genuine bugs were fixed (fuzzy matching changed the first letter, so 'redness' was read as 'weakness'; and a trailing trend phrase attached to the next symptom). Two gold annotations were corrected to follow the written location convention (C01, C14). No other rules were tuned on this set."
+  }
+ }
+}
