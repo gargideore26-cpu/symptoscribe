@@ -369,6 +369,22 @@ class MixedLanguage(unittest.TestCase):
         self.assertEqual(r, {("fever", "present"), ("cough", "absent")})
 
 
+class Checklist(unittest.TestCase):
+    def test_marks_what_was_already_said(self):
+        r = analyze("I am a 30 year old man with fever for 2 days. Allergic to penicillin. Taking paracetamol.")
+        done = {c["id"]: c["done"] for c in r["checklist"]}
+        self.assertTrue(done["duration"] and done["age"] and done["allergies"] and done["medicines"])
+        self.assertFalse(done["severity"])
+        self.assertNotIn("pregnancy", done)
+
+    def test_pregnancy_asked_for_women_only(self):
+        ids = {c["id"] for c in analyze("30 year old woman with headache")["checklist"]}
+        self.assertIn("pregnancy", ids)
+
+    def test_empty_when_no_symptoms(self):
+        self.assertEqual(analyze("hello")["checklist"], [])
+
+
 class WebApi(unittest.TestCase):
     def setUp(self):
         from app import create_app
@@ -421,6 +437,47 @@ class WebApi(unittest.TestCase):
     def test_static_files(self):
         for path in ("/static/app.js", "/static/style.css"):
             self.assertEqual(self.client.get(path).status_code, 200)
+
+
+
+class QueueAndIntake(unittest.TestCase):
+    def setUp(self):
+        import os, tempfile
+        self.tmp = tempfile.TemporaryDirectory()
+        os.environ["INTAKE_FILE"] = os.path.join(self.tmp.name, "intake.json")
+        from app import create_app
+        self.client = create_app().test_client()
+
+    def tearDown(self):
+        import os
+        os.environ.pop("INTAKE_FILE", None)
+        self.tmp.cleanup()
+
+    def test_triage_orders_by_urgency(self):
+        r = self.client.post("/api/triage", json={"patients": [
+            {"name": "A", "text": "mild cold since 2 days"},
+            {"name": "B", "text": "severe chest pain and breathlessness since morning"}]})
+        d = r.get_json()
+        self.assertEqual([p["name"] for p in d], ["B", "A"])
+        self.assertEqual(d[0]["rank"], 1)
+        self.assertEqual(self.client.post("/api/triage", json={"patients": [{"text": " "}]}).status_code, 400)
+
+    def test_intake_round_trip(self):
+        tok = self.client.post("/api/intake", json={"label": "Asha"}).get_json()["token"]
+        self.assertEqual(self.client.get(f"/p/{tok}").status_code, 200)
+        self.assertFalse(self.client.get("/api/intake").get_json()["items"][0]["submitted"])
+        r = self.client.post(f"/api/intake/{tok}/submit", json={"name": "Asha", "text": "fever for 3 days, no cough"})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(self.client.post(f"/api/intake/{tok}/submit", json={"text": "again"}).status_code, 409)
+        item = self.client.get("/api/intake").get_json()["items"][0]
+        self.assertTrue(item["submitted"])
+        self.assertIn("fever", item["symptoms"])
+        self.assertEqual(self.client.delete(f"/api/intake/{tok}").status_code, 200)
+        self.assertEqual(self.client.get("/api/intake").get_json()["items"], [])
+
+    def test_bad_token(self):
+        self.assertEqual(self.client.get("/p/nope").status_code, 404)
+        self.assertEqual(self.client.post("/api/intake/nope/submit", json={"text": "fever"}).status_code, 404)
 
 
 if __name__ == "__main__":

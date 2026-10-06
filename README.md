@@ -31,7 +31,7 @@ python app.py                      # open http://127.0.0.1:5000
 Set `PORT=5001` if port 5000 is busy (macOS AirPlay uses it).
 
 ```bash
-python -m unittest discover -s tests -v      # 77 tests
+python -m unittest discover -s tests -v      # 79 tests
 python evaluation/evaluate.py --failures     # accuracy on the annotated texts
 ```
 
@@ -52,6 +52,8 @@ symptoscribe/
     ├── gold.json           91 hand-annotated texts (183 symptom annotations)
     └── evaluate.py         precision / recall / F1 and error list
 ```
+
+**Still to ask** checklist under each note (age, allergies, medicines, existing conditions, pregnancy status, vitals, and any symptom missing a duration or severity; ticked automatically when the patient already said it). **Queue** page (`/api/triage`) reads several patients and sorts them by urgency. **Intake** page: the doctor makes a link (`/p/<token>`), the patient writes or speaks their symptoms on their own device, and the note appears in the doctor's inbox. Forms are stored in `data/intake.json` (gitignored) and there is **no login**, so run it only on a trusted computer or network; start with `HOST=0.0.0.0` to let patients on the same Wi-Fi reach it.
 
 Extras: **age-aware red flags** (fever in a baby or an older adult, dehydration risk at the extremes of age, bleeding and other warning signs in pregnancy, each flag showing why it fired) and **vital signs** (BP, pulse, SpO2, breathing rate, blood sugar, weight, temperature) that are extracted, marked normal, low, high or critical, and can raise flags. **Live** page for consultations: the microphone stays on (Web Speech API, English, Hindi or Marathi), each finished sentence is analysed, and the note, symptom cards and red flags update as the patient talks; a typed fallback and a scripted demo are included. Sentences may **mix languages** (for example `mujhe fever hai aur पेट में दर्द`); the result shows a Mixed label with its parts. **Pipeline** page (`/api/pipeline`) steps through the eight stages on any text, with tokens, normalisation, symptoms, clauses, negation, details, links and the note. **Compare** page (`/api/compare`) diffs two visits (new, resolved, worse/better); the PDF report can carry typed-in patient name, age, date and doctor, which are never stored.
 

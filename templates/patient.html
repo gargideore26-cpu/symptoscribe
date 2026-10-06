@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>Tell your doctor how you feel</title>
+  <script>try{var t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600&family=Jost:wght@300;400;500;600&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="icon" type="image/svg+xml" href="{{ url_for('static', filename='favicon.svg') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body class="patient-body">
+  <main class="patient-card">
+    <span class="brand"><span class="brand-mark" aria-hidden="true"></span>SymptoScribe</span>
+    {% if not valid %}
+      <h1>This link is not valid</h1>
+      <p class="muted">Please ask your clinic for a new link.</p>
+    {% elif done %}
+      <h1>Already sent</h1>
+      <p class="muted">Your doctor has your message. Thank you.</p>
+    {% else %}
+      <div id="p-form" data-token="{{ request.path.rsplit('/', 1)[-1] }}">
+        <h1>Tell your doctor how you feel</h1>
+        <p class="muted">Write in your own words, in English, Hinglish, हिन्दी or मराठी. Say what hurts, since when, and what you do <em>not</em> have. Your doctor will read it before the appointment.</p>
+        <label class="field-label" for="p-name">Your name</label>
+        <input id="p-name" type="text" maxlength="60" autocomplete="name">
+        <label class="field-label" for="p-text">How are you feeling?</label>
+        <textarea id="p-text" rows="8" maxlength="3000" placeholder="For example: I have had a fever and sore throat for 3 days. No cough. I take paracetamol."></textarea>
+        <div class="p-tools">
+          <button id="p-mic" class="btn" type="button" hidden>🎤 Speak</button>
+          <select id="p-lang" class="mic-lang" aria-label="Speaking language" hidden><option value="en-IN">English</option><option value="hi-IN">हिन्दी</option><option value="mr-IN">मराठी</option></select>
+          <span id="p-status" class="muted"></span>
+        </div>
+        <button id="p-send" class="btn primary p-send" type="button">Send to my doctor</button>
+        <p id="p-error" class="p-error" role="alert" hidden></p>
+        <p class="muted p-fine">This is not an emergency service. If you have chest pain, trouble breathing or heavy bleeding, call emergency services now.</p>
+      </div>
+      <div id="p-thanks" hidden>
+        <h1>Thank you</h1>
+        <p class="muted">Your doctor has your message and will read it before your appointment. You can close this page.</p>
+      </div>
+    {% endif %}
+  </main>
+  <script src="{{ url_for('static', filename='patient.js') }}"></script>
+</body>
+</html>

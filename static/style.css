@@ -975,3 +975,62 @@ svg.welcome-logo { display: block; width: 120px; height: 120px; margin-bottom: 3
 .site-foot a:hover { color: var(--ink); }
 body:has(#view-welcome:not([hidden])) .site-foot { display: none; }
 .safety-note { margin: 14px 2px 0; font-size: 12.5px; color: var(--muted); }
+
+/* =====================================================================
+   Checklist, triage queue, patient intake
+   ===================================================================== */
+.chk-count { margin-left: 8px; font-size: 12px; font-weight: 500; color: var(--muted); letter-spacing: 0; text-transform: none; }
+.checklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.checklist label { display: flex; align-items: center; gap: 10px; padding: 7px 10px; border-radius: 10px; cursor: pointer; font-size: 14.5px; }
+.checklist label:hover { background: rgba(255,255,255,.05); }
+.checklist input { accent-color: var(--crimson); width: 17px; height: 17px; flex: none; }
+.checklist small { margin-left: auto; font-size: 11.5px; color: var(--muted); }
+.checklist li.is-done span { color: var(--muted); text-decoration: line-through; text-decoration-color: rgba(255,255,255,.25); }
+:root[data-theme="light"] .checklist label:hover { background: rgba(27,18,23,.05); }
+
+.q-rows { display: grid; gap: 10px; margin-top: 8px; }
+.q-row { display: grid; grid-template-columns: 28px minmax(120px, 200px) minmax(0, 1fr) 28px; gap: 10px; align-items: start; }
+@media (max-width: 700px) { .q-row { grid-template-columns: 28px minmax(0, 1fr) 28px; } .q-row .q-text { grid-column: 2 / 4; } }
+.q-n { display: grid; place-items: center; width: 26px; height: 26px; margin-top: 7px; border-radius: 50%; background: rgba(229,35,63,.2); color: #ff8a9d; font-size: 12px; font-weight: 600; }
+.q-row input, .q-row textarea, .in-make input, .patient-card input, .patient-card textarea { font: inherit; font-size: 14.5px; color: var(--ink); background: rgba(255,255,255,.05); border: 1px solid var(--line); border-radius: 12px; padding: 9px 12px; width: 100%; min-width: 0; resize: vertical; }
+.q-row input:focus, .q-row textarea:focus, .in-make input:focus, .patient-card input:focus, .patient-card textarea:focus { outline: none; border-color: var(--crimson); box-shadow: 0 0 0 3px rgba(229,35,63,.15); }
+.q-row .an-del, .q-row [data-del] { margin-top: 6px; flex: none; width: 26px; height: 26px; border-radius: 50%; border: 1px solid var(--line); background: none; color: var(--muted); cursor: pointer; font-size: 16px; line-height: 1; }
+.q-row [data-del]:hover { border-color: var(--crimson); color: #ff8a9d; }
+.q-actions { margin-top: 14px; flex-wrap: wrap; gap: 10px; }
+.q-title { font-size: 18px; font-weight: 500; margin: 34px 0 12px; }
+.q-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.q-card { --lvl: var(--lvl-routine); display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 16px; align-items: center; padding: 16px 18px; border-radius: 16px; border: 1px solid var(--line); border-left: 4px solid var(--lvl); background: rgba(14,14,17,.85); }
+.q-card.lvl-attention { --lvl: var(--lvl-attention); } .q-card.lvl-urgent { --lvl: var(--lvl-urgent); } .q-card.lvl-emergency { --lvl: var(--lvl-emergency); background: rgba(255,111,125,.07); }
+.q-rank { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 50%; border: 2px solid var(--lvl); font-weight: 700; font-size: 17px; }
+.q-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.q-level { font-size: 12px; font-weight: 600; padding: 2px 10px; border-radius: 99px; border: 1px solid var(--lvl, var(--line)); color: var(--lvl, var(--muted)); }
+.q-flag { margin: 4px 0 8px; font-size: 14.5px; } .q-flag small { color: var(--muted); }
+.q-chips { display: flex; flex-wrap: wrap; gap: 6px; } .q-chips span { font-size: 12.5px; padding: 3px 11px; border-radius: 99px; background: rgba(255,255,255,.07); text-transform: capitalize; }
+.q-side { display: grid; justify-items: end; gap: 8px; } .q-side small { color: var(--muted); }
+@media (max-width: 600px) { .q-card { grid-template-columns: 40px minmax(0, 1fr); } .q-side { grid-column: 2; justify-items: start; } }
+:root[data-theme="light"] .q-card { background: #fff; } :root[data-theme="light"] .q-chips span { background: rgba(27,18,23,.07); }
+:root[data-theme="light"] .q-row input, :root[data-theme="light"] .q-row textarea, :root[data-theme="light"] .in-make input { background: #fff; }
+
+.in-make { margin-top: 10px; } .in-make-row { display: flex; gap: 10px; flex-wrap: wrap; } .in-make-row input { flex: 1; min-width: 220px; width: auto; border-radius: 999px; padding: 11px 18px; }
+.in-hint { font-size: 12.5px; margin: 8px 2px 0; }
+.in-head { display: flex; align-items: center; justify-content: space-between; margin: 34px 0 12px; } .in-head h3 { margin: 0; font-size: 18px; font-weight: 500; }
+.in-card { --lvl: var(--line); padding: 16px 18px; margin-bottom: 12px; border-radius: 16px; border: 1px solid var(--line); border-left: 4px solid var(--lvl); background: rgba(14,14,17,.85); }
+.in-card.lvl-routine { --lvl: var(--lvl-routine); } .in-card.lvl-attention { --lvl: var(--lvl-attention); } .in-card.lvl-urgent { --lvl: var(--lvl-urgent); } .in-card.lvl-emergency { --lvl: var(--lvl-emergency); }
+.in-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; }
+.in-state { font-size: 12px; padding: 2px 10px; border-radius: 99px; } .in-state.wait { background: rgba(255,255,255,.08); color: var(--muted); } .in-state.got { background: rgba(127,224,176,.16); color: #7fe0b0; }
+.in-link { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin: 10px 0 6px; } .in-link input { flex: 1; min-width: 200px; font: inherit; font-size: 13px; color: var(--muted); background: rgba(255,255,255,.04); border: 1px solid var(--line); border-radius: 10px; padding: 7px 10px; }
+.in-text { margin: 8px 0 0; font-size: 14px; color: var(--muted); overflow-wrap: anywhere; }
+.in-note { font-size: 12.5px; margin-top: 24px; }
+:root[data-theme="light"] .in-card { background: #fff; } :root[data-theme="light"] .in-link input { background: #fff; }
+
+.patient-body { min-height: 100vh; display: grid; place-items: start center; padding: 28px 16px 60px; }
+.patient-card { width: min(640px, 100%); display: grid; gap: 6px; padding: clamp(22px, 5vw, 38px); border-radius: 24px; border: 1px solid var(--line); background: rgba(14,14,17,.85); }
+.patient-card .brand { display: inline-flex; align-items: center; gap: 10px; font-weight: 600; margin-bottom: 14px; }
+.patient-card h1 { font-size: clamp(26px, 6vw, 34px); font-weight: 500; letter-spacing: -.02em; margin: 0 0 6px; }
+.patient-card .field-label { margin-top: 14px; }
+.p-tools { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 10px 0 4px; }
+.p-send { margin-top: 14px; justify-self: start; }
+.p-error { margin: 8px 0 0; color: var(--lvl-emergency); font-size: 14px; }
+.p-fine { font-size: 12.5px; margin-top: 18px; }
+:root[data-theme="light"] .patient-card { background: #fff; } :root[data-theme="light"] .patient-card input, :root[data-theme="light"] .patient-card textarea { background: #fff; }
+.q-row textarea { min-height: 0; height: 62px; }

@@ -1393,6 +1393,35 @@ def follow_up_questions(records) -> list:
     return qs[:6]
 
 
+def build_checklist(text, records, ctx, vitals) -> list:
+    """What the doctor still has to ask. An item is done when the patient already said it."""
+    present = [r for r in records if r["status"] in ("present", "uncertain") and r["subject"] == "patient"]
+    if not present:
+        return []
+    low = text.lower()
+    items = []
+
+    def add(key, label, done):
+        items.append({"id": key, "label": label, "done": bool(done)})
+
+    no_dur = [r["name"] for r in present if not r["duration"]]
+    add("duration", "How long: " + ", ".join(no_dur[:4]) if no_dur else "How long each symptom has lasted", not no_dur)
+    no_sev = [r["name"] for r in present if not r["severity"]]
+    add("severity", "How severe: " + ", ".join(no_sev[:4]) if no_sev else "How severe each symptom is", not no_sev)
+    if vitals and any(r["name"] == "fever" for r in present) and not any(v["kind"] == "temp" for v in vitals):
+        add("temperature", "Measured temperature", False)
+    has_age = ctx["age"] is not None or ctx.get("age_months") is not None
+    add("age", "Age", has_age)
+    add("allergies", "Allergies", ctx["allergies"] or re.search(r"allerg|nkda|\bnka\b", low))
+    add("medicines", "Medicines being taken", ctx["medications"] or re.search(r"medicin|tablet|\bpills?\b|syrup|taking|\btook\b|dawai|goli", low))
+    add("conditions", "Existing conditions", ctx["conditions"] or re.search(r"no other (illness|problem|condition)|history of|diabet|hypertens|asthma", low))
+    if ctx["gender"] == "female" and (ctx["age"] is None or 12 <= ctx["age"] <= 50):
+        add("pregnancy", "Pregnancy status", re.search(r"pregnan|\blmp\b|expecting", low))
+    if not vitals:
+        add("vitals", "Vital signs (BP, pulse, temperature)", False)
+    return items
+
+
 # ------------------------------------------------------------------ public API
 STATUS_LABEL = {"present": "symptom", "absent": "negated", "uncertain": "uncertain", "history": "history", "resolved": "negated"}
 
@@ -1504,6 +1533,7 @@ def analyze(text: str, ref_date: Optional[dt.date] = None) -> dict:
         "vitals": vitals,
         "summary": build_summary(recs, ctx) + vitals_sentence(vitals),
         "follow_up_questions": follow_up_questions(recs),
+        "checklist": build_checklist(text, recs, ctx, vitals),
         "unlinked_details": unlinked_all,
         "highlights": uniq,
         "tokens": tokens,

@@ -26,6 +26,8 @@
       <a href="#home" data-view="home">Home</a>
       <a href="#analyzer" data-view="analyzer">Analyzer</a>
       <a href="#live" data-view="live">Live</a>
+      <a href="#queue" data-view="queue">Queue</a>
+      <a href="#intake" data-view="intake">Intake</a>
     </nav>
     <div class="top-right">
       <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch to light theme" title="Toggle light / dark">
@@ -142,6 +144,44 @@
             <div class="empty"><p>The live note appears here.</p></div>
           </div>
         </div>
+      </div>
+    </section>
+
+    <!-- ====================================================== TRIAGE QUEUE -->
+    <section id="view-queue" class="view" hidden>
+      <div class="window">
+        <div class="win-bar"><i></i><i></i><i></i><span>SymptoScribe · Queue</span></div>
+        <h2 class="section-title">Triage queue</h2>
+        <p class="lede">Add the patients waiting, one description each. We read all of them and put the most urgent first.</p>
+        <div id="q-rows" class="q-rows"></div>
+        <div class="actions q-actions">
+          <button id="q-sort" class="btn primary" type="button">Sort by urgency</button>
+          <button id="q-add" class="btn" type="button">Add patient</button>
+          <button id="q-sample" class="btn" type="button">Load a sample queue</button>
+          <button id="q-inbox" class="btn" type="button">Add received intake forms</button>
+          <button id="q-clear" class="btn" type="button">Clear</button>
+        </div>
+        <div id="q-out" aria-live="polite"></div>
+      </div>
+    </section>
+
+    <!-- ====================================================== PATIENT INTAKE -->
+    <section id="view-intake" class="view" hidden>
+      <div class="window">
+        <div class="win-bar"><i></i><i></i><i></i><span>SymptoScribe · Patient intake</span></div>
+        <h2 class="section-title">Patient intake</h2>
+        <p class="lede">Make a link and send it to the patient. They write or speak how they feel at home, and the note is ready here before the appointment.</p>
+        <div class="in-make">
+          <label class="field-label" for="in-label">Patient name or note (optional)</label>
+          <div class="in-make-row">
+            <input id="in-label" type="text" maxlength="60" placeholder="For example: Asha, Tuesday 4 pm" autocomplete="off">
+            <button id="in-create" class="btn primary" type="button">Create patient link</button>
+          </div>
+          <p id="in-hint" class="muted in-hint"></p>
+        </div>
+        <div class="in-head"><h3>Forms</h3><button id="in-refresh" class="btn small" type="button">Refresh</button></div>
+        <div id="in-list" aria-live="polite"></div>
+        <p class="muted in-note">There is no login in this prototype: anyone who can open this site can read the forms. Patient text is saved on this computer until you delete it.</p>
       </div>
     </section>
 

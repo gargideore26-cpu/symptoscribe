@@ -15,7 +15,7 @@
   const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
   /* ------------------------------------------------------------ views */
-  const VIEWS = ["welcome", "home", "analyzer", "live", "evaluation", "about"];
+  const VIEWS = ["welcome", "home", "analyzer", "live", "queue", "intake", "evaluation", "about"];
   let evalLoaded = false;
   let datasetLoaded = false;
 
@@ -29,6 +29,7 @@
       if (a.dataset.view === name) a.setAttribute("aria-current", "page");
       else a.removeAttribute("aria-current");
     });
+    if (name === "intake") loadIntake();
     if (name === "evaluation") {
       if (!evalLoaded) loadEvaluation();
       if (!datasetLoaded) loadDataset();
@@ -178,6 +179,9 @@
     const vit = (r.vitals && r.vitals.length)
       ? `<div class="block"><h3>Vital signs</h3><div class="vitals">${r.vitals.map((v) => `<div class="vital vs-${esc(v.status)}"><span class="v-label">${esc(v.label)}</span><span class="v-value">${esc(v.value)}<small>${esc(v.unit)}</small></span><span class="v-status">${esc(v.status === "normal" ? "Normal" : cap(v.status))}</span>${v.note ? `<small class="v-note">${esc(v.note)}</small>` : ""}</div>`).join("")}</div></div>`
       : "";
+    const chk = (r.checklist && r.checklist.length)
+      ? `<div class="block"><h3>Still to ask <span class="chk-count" id="chk-count"></span></h3><ul class="checklist">${r.checklist.map((c, i) => `<li class="${c.done ? "is-done" : ""}"><label><input type="checkbox" data-i="${i}"${c.done ? " checked disabled" : ""}><span>${esc(c.label)}</span>${c.done ? "<small>mentioned</small>" : ""}</label></li>`).join("")}</ul></div>`
+      : "";
     const fups = r.follow_up_questions.length
       ? `<div class="block"><h3>Questions the doctor may want to ask</h3><ul class="followups">${r.follow_up_questions.map((q) => `<li>${esc(q)}</li>`).join("")}</ul></div>`
       : "";
@@ -193,10 +197,15 @@
       ${flags}
       ${vit}
       <div class="block"><h3>Structured symptoms</h3>${tableHtml(r.symptoms)}</div>
+      ${chk}
       ${fups}
       <p class="safety-note">Decision support only. This is not a diagnosis; the doctor decides.</p>
     </article>`;
     renderMarked(r.text, r.highlights);
+    const boxes = outEl.querySelectorAll(".checklist input");
+    const countChk = () => { const c = $("#chk-count"); if (c) c.textContent = `${[...boxes].filter((b) => b.checked).length} of ${boxes.length} covered`; };
+    boxes.forEach((b) => b.addEventListener("change", () => { b.closest("li").classList.toggle("is-done", b.checked); countChk(); }));
+    countChk();
     $("#copy-note").addEventListener("click", copyNote);
     $("#dl-report").addEventListener("click", downloadReport);
   }
@@ -759,6 +768,155 @@
     window.addEventListener("hashchange", () => { if (location.hash !== "#live") { lvStopMic(); lvStopDemo(); } });   // never keep recording in the background
   }
 
+  /* ------------------------------------------------------------ triage queue */
+  const Q_SAMPLE = [
+    { name: "Meera", text: "I have had a cold and a mild sore throat for 2 days. No fever." },
+    { name: "Mr Kulkarni, 72", text: "72 year old man with severe chest pain since morning, sweating and feeling breathless. BP 90/60." },
+    { name: "Baby Arjun", text: "My 2 month old baby has had fever since last night and is not feeding well." },
+    { name: "Rohit", text: "Mujhe 3 din se bukhar hai aur sar dard bhi hai, khansi nahi hai." },
+  ];
+  const q = { rows: [{ name: "", text: "" }] };
+
+  function qSync() {
+    $("#q-rows").querySelectorAll(".q-row").forEach((row, i) => {
+      q.rows[i] = { name: $(".q-name", row).value, text: $(".q-text", row).value };
+    });
+  }
+  function qRender() {
+    $("#q-rows").innerHTML = q.rows.map((r, i) => `<div class="q-row">
+      <span class="q-n">${i + 1}</span>
+      <input class="q-name" type="text" maxlength="60" placeholder="Name (optional)" value="${esc(r.name)}" aria-label="Patient ${i + 1} name">
+      <textarea class="q-text" rows="2" placeholder="What the patient says" aria-label="Patient ${i + 1} description">${esc(r.text)}</textarea>
+      <button class="an-del" type="button" data-del="${i}" aria-label="Remove patient ${i + 1}">×</button></div>`).join("");
+  }
+  function qRenderResult(list) {
+    $("#q-out").innerHTML = `<h3 class="q-title">Seen in this order</h3><ol class="q-list">${list.map((p) => `
+      <li class="q-card lvl-${esc(p.level)}">
+        <span class="q-rank">${p.rank}</span>
+        <div class="q-main">
+          <div class="q-top"><b>${esc(p.name)}</b><span class="q-level">${esc(LEVELS[p.level][0])}</span></div>
+          <p class="q-flag">${p.top_flag ? esc(p.top_flag) + (p.flags > 1 ? ` <small>+${p.flags - 1} more</small>` : "") : "No red flags found."}</p>
+          <div class="q-chips">${p.symptoms.map((s) => `<span>${esc(s)}</span>`).join("") || '<span class="muted">No symptoms found</span>'}</div>
+        </div>
+        <div class="q-side"><small>${p.to_ask} to ask</small><button class="btn small" type="button" data-open="${p.index}">Open note</button></div>
+      </li>`).join("")}</ol>`;
+    q.result = list;
+  }
+  async function qSort() {
+    qSync();
+    const out = $("#q-out"), btn = $("#q-sort");
+    const patients = q.rows.filter((r) => r.text.trim());
+    if (!patients.length) { out.innerHTML = '<div class="error" role="alert">Add at least one patient with a description.</div>'; return; }
+    btn.disabled = true; btn.textContent = "Sorting…";
+    try {
+      const res = await fetch("/api/triage", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ patients }) });
+      const d = await res.json();
+      if (!res.ok) throw new Error(d.error || "Could not sort.");
+      q.sorted = patients;
+      qRenderResult(d);
+    } catch (e) {
+      out.innerHTML = `<div class="error" role="alert"><strong>Could not sort.</strong> ${esc(e.message)}</div>`;
+    } finally {
+      btn.disabled = false; btn.textContent = "Sort by urgency";
+    }
+  }
+  function openInAnalyzer(text) {
+    textEl.value = text;
+    location.hash = "#analyzer";
+    analyze();
+  }
+  function bindQueue() {
+    qRender();
+    $("#q-add").addEventListener("click", () => { qSync(); q.rows.push({ name: "", text: "" }); qRender(); $("#q-rows").lastElementChild.querySelector("textarea").focus(); });
+    $("#q-sort").addEventListener("click", qSort);
+    $("#q-sample").addEventListener("click", () => { q.rows = Q_SAMPLE.map((r) => ({ ...r })); qRender(); qSort(); });
+    $("#q-clear").addEventListener("click", () => { q.rows = [{ name: "", text: "" }]; q.sorted = null; qRender(); $("#q-out").innerHTML = ""; });
+    $("#q-rows").addEventListener("click", (e) => {
+      const d = e.target.closest("[data-del]");
+      if (!d) return;
+      qSync(); q.rows.splice(+d.dataset.del, 1); if (!q.rows.length) q.rows.push({ name: "", text: "" }); qRender();
+    });
+    $("#q-out").addEventListener("click", (e) => {
+      const b = e.target.closest("[data-open]");
+      if (b && q.sorted) openInAnalyzer(q.sorted[+b.dataset.open].text);
+    });
+    $("#q-inbox").addEventListener("click", async () => {
+      try {
+        const d = await (await fetch("/api/intake")).json();
+        const got = d.items.filter((i) => i.submitted);
+        if (!got.length) { $("#q-out").innerHTML = '<p class="muted">No patient has sent a form yet.</p>'; return; }
+        qSync();
+        q.rows = q.rows.filter((r) => r.text.trim()).concat(got.map((i) => ({ name: i.name || i.label, text: i.text })));
+        qRender(); qSort();
+      } catch { $("#q-out").innerHTML = '<div class="error" role="alert">Could not read the intake forms.</div>'; }
+    });
+  }
+
+  /* ------------------------------------------------------------ patient intake */
+  let inItems = [], inLan = "", inTimer = null;
+  const LVL_SHORT = { routine: "Routine", attention: "Needs attention", urgent: "See soon", emergency: "Urgent care" };
+
+  function inBase() {
+    const local = ["localhost", "127.0.0.1", "[::1]"].includes(location.hostname);
+    return local && inLan ? `http://${inLan}${location.port ? ":" + location.port : ""}` : location.origin;
+  }
+  function inRender() {
+    const base = inBase();
+    $("#in-hint").textContent = ["localhost", "127.0.0.1"].includes(location.hostname) && !inLan
+      ? "These links open on this computer only. To let a patient on the same Wi-Fi open one, start the app with HOST=0.0.0.0."
+      : "";
+    if (!inItems.length) { $("#in-list").innerHTML = '<div class="empty"><p>No links yet. Create one above.</p></div>'; return; }
+    $("#in-list").innerHTML = inItems.map((it) => {
+      const when = new Date((it.submitted || it.created) * 1000).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
+      if (!it.submitted) {
+        const url = base + "/p/" + it.token;
+        return `<div class="in-card"><div class="in-top"><b>${esc(it.label || "Patient link")}</b><span class="in-state wait">Waiting for the patient</span></div>
+          <div class="in-link"><input type="text" readonly value="${esc(url)}" aria-label="Patient link"><button class="btn small" type="button" data-copy="${esc(url)}">Copy link</button><button class="btn small" type="button" data-del="${esc(it.token)}">Delete</button></div>
+          <small class="muted">Created ${esc(when)}</small></div>`;
+      }
+      return `<div class="in-card lvl-${esc(it.level)}"><div class="in-top"><b>${esc(it.name || it.label || "Patient")}</b><span class="in-state got">Received</span><span class="q-level">${esc(LVL_SHORT[it.level])}</span></div>
+        <p class="q-flag">${it.top_flag ? esc(it.top_flag) : "No red flags found."}</p>
+        <div class="q-chips">${it.symptoms.map((s) => `<span>${esc(s)}</span>`).join("")}</div>
+        <p class="in-text">${esc(it.text.length > 220 ? it.text.slice(0, 220) + "…" : it.text)}</p>
+        <div class="in-link"><button class="btn small primary" type="button" data-open="${esc(it.token)}">Open note</button><button class="btn small" type="button" data-del="${esc(it.token)}">Delete</button><small class="muted">Received ${esc(when)}</small></div></div>`;
+    }).join("");
+  }
+  async function loadIntake() {
+    clearInterval(inTimer);
+    try {
+      const d = await (await fetch("/api/intake")).json();
+      inItems = d.items; inLan = d.lan_ip || "";
+      const typing = document.activeElement && document.activeElement.closest && document.activeElement.closest("#in-list");
+      if (!typing) inRender();
+    } catch { $("#in-list").innerHTML = '<div class="error" role="alert">Could not load the forms.</div>'; }
+    inTimer = setInterval(() => { if ($("#view-intake").hidden) clearInterval(inTimer); else loadIntake(); }, 8000);
+  }
+  function bindIntake() {
+    $("#in-create").addEventListener("click", async () => {
+      const btn = $("#in-create");
+      btn.disabled = true;
+      try {
+        await fetch("/api/intake", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ label: $("#in-label").value }) });
+        $("#in-label").value = "";
+        await loadIntake();
+      } finally { btn.disabled = false; }
+    });
+    $("#in-refresh").addEventListener("click", loadIntake);
+    $("#in-list").addEventListener("click", async (e) => {
+      const c = e.target.closest("[data-copy]"), d = e.target.closest("[data-del]"), o = e.target.closest("[data-open]");
+      if (c) {
+        try { await navigator.clipboard.writeText(c.dataset.copy); c.textContent = "Copied"; } catch { c.previousElementSibling.select(); c.textContent = "Press Ctrl+C"; }
+      } else if (d) {
+        if (!confirm("Delete this form? Anything the patient wrote is removed from this computer.")) return;
+        await fetch("/api/intake/" + encodeURIComponent(d.dataset.del), { method: "DELETE" });
+        loadIntake();
+      } else if (o) {
+        const it = inItems.find((x) => x.token === o.dataset.open);
+        if (it) openInAnalyzer(it.text);
+      }
+    });
+  }
+
   /* ------------------------------------------------------------ init */
   async function init() {
     document.querySelectorAll("a[data-view]").forEach((a) => a.addEventListener("click", () => {
@@ -811,6 +969,8 @@
     bindTheme();
     bindReportDialog();
     bindLive();
+    bindQueue();
+    bindIntake();
     bindWelcome();
     bindSpotlight();
     bindLive();
