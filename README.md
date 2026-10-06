@@ -126,5 +126,5 @@ Each of these is a good extension task.
 * **Not a diagnostic tool.** It organises what the patient wrote, and names no disease.
 * The red flags are coarse rules for attention, not clinical triage. They err on the side of caution.
 * A missing symptom does not mean the patient did not mention it. The marked-up text is there so that humans can check.
-* **Privacy:** text is processed in memory and not stored. Do not use real patient data, names or phone numbers in demos.
+* **Privacy:** the Analyzer, Live and Queue pages process text in memory and do not store it. The exception is **Intake**: a form a patient sends is saved on the computer running the app (`data/intake.json`, not pushed to GitHub) until the doctor deletes it, and there is no login, so anyone who can open the site can read it. Do not use real patient data, names or phone numbers in demos.
 * Self-harm language triggers a message with the Tele-MANAS number (14416 / 1-800-891-4416, India).
