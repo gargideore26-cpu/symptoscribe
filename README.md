@@ -78,7 +78,7 @@ Languages: English, romanised Hindi (Hinglish), and **Hindi and Marathi in Devan
 
 ### Why rules and not a neural model?
 
-For clinical text, every decision should be explainable and fixable. Rules need no training data, are deterministic, and the interface shows a reason for each decision. They are also a strong **baseline** to compare a learned model against (see Section 7).
+For clinical text, every decision should be explainable and fixable. Rules need no training data, are deterministic, and the interface shows a reason for each decision. They are also a strong **baseline** to compare a learned model against.
 
 ## 4. Dataset and evaluation
 
