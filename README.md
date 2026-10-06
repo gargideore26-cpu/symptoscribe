@@ -128,30 +128,3 @@ Each of these is a good extension task.
 * A missing symptom does not mean the patient did not mention it. The marked-up text is there so that humans can check.
 * **Privacy:** text is processed in memory and not stored. Do not use real patient data, names or phone numbers in demos.
 * Self-harm language triggers a message with the Tele-MANAS number (14416 / 1-800-891-4416, India).
-
-## 6. How to extend the lexicon
-
-Open `nlp/lexicon.py`. To add a symptom, add a line to `SYMPTOMS`:
-
-```python
-"photophobia": ["photophobia", "light hurts my eyes", "sensitive to light"],
-```
-
-and, optionally, a body system in `SYSTEM`. Then add a test sentence to `gold.json` and run `python evaluation/evaluate.py`. Other tables: `SEVERITY`, `TREND`, `TRIGGER_OBJECTS`, `LOCATIONS`, `RED_FLAGS`, `MEDICATIONS`, `UNIT_DAYS`.
-
-## 7. Ideas for the next semester
-
-1. **Learned baseline:** fine-tune a token-classification model (BioBERT, or MuRIL for Indian languages) on the annotated data and compare it with the rules (same `evaluate.py`).
-2. Devanagari and Marathi input (AI4Bharat resources).
-3. Speech input (Whisper) for patients who cannot type.
-4. Coreference for "She", "he" and "both" across sentences.
-5. Grow the annotated set and measure inter-annotator agreement with a classmate.
-
-## 8. Viva cheat-sheet
-
-* **Problem:** patients describe symptoms in free text; doctors have minutes. Structuring the text saves time and avoids missed details such as denied symptoms.
-* **Why NLP:** the same fact has many surface forms (*burning*, *been burning since Sunday*, *Sunday se*). Negation, scope and attachment decide meaning.
-* **Hardest part:** deciding which detail belongs to which symptom and where a negation ends.
-* **Baseline vs ML:** the rule system is explainable and needs no data; the ML model would generalise better but needs labelled data. Both are scored with the same F1 metric.
-* **Metric choices:** entity-level precision and recall, because a missed symptom is worse than an extra one.
-* **Limits:** same-author annotation, a small lexicon, English and Hinglish only.
