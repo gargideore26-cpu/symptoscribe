@@ -1034,3 +1034,52 @@ body:has(#view-welcome:not([hidden])) .site-foot { display: none; }
 .p-fine { font-size: 12.5px; margin-top: 18px; }
 :root[data-theme="light"] .patient-card { background: #fff; } :root[data-theme="light"] .patient-card input, :root[data-theme="light"] .patient-card textarea { background: #fff; }
 .q-row textarea { min-height: 0; height: 62px; }
+
+/* ---------- nav links stacked vertically under the logo, on the left */
+@media (min-width: 761px) {
+  .top { position: fixed; top: 0; left: 0; bottom: 0; width: 210px; height: auto; flex-direction: column; align-items: flex-start; justify-content: flex-start; flex-wrap: nowrap; gap: 22px; padding: 22px 14px; border-bottom: 0; border-right: 1px solid var(--line); z-index: 6; }
+  .brand { order: 1; padding-left: 8px; }
+  #nav { order: 2; position: static; transform: none; width: 100%; margin: 0; flex-direction: column; align-items: stretch; gap: 2px; }
+  #nav a { padding: 10px 12px; font-size: 14px; border-radius: 10px; }
+  #nav a[aria-current="page"] { background: rgba(229,35,63,.16); box-shadow: none; border-radius: 10px; opacity: 1; }
+  .top-right { order: 3; margin-top: auto; padding-left: 8px; }
+  body:not(.on-welcome) { padding-left: 210px; transition: padding-left .3s cubic-bezier(.2,.8,.2,1); }
+  body:not(.on-welcome) .site-foot { margin-left: auto; margin-right: auto; }
+}
+
+/* Safety and For reviewers live in the side menu, set apart from the main pages */
+#nav .nav-sub { font-size: 13px; opacity: .55; }
+@media (min-width: 761px) { #nav .nav-first { margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--line); border-radius: 0; } #nav .nav-sub { padding: 8px 12px; } }
+
+/* ---------- hide / show the side menu */
+.nav-toggle { display: none; }
+@media (min-width: 761px) {
+  .nav-toggle { display: grid; place-items: center; position: fixed; top: 16px; left: 14px; z-index: 7; width: 38px; height: 38px; padding: 0; border-radius: 12px; border: 1px solid var(--line); background: rgba(255,255,255,.06); color: var(--ink); cursor: pointer; transition: left .3s cubic-bezier(.2,.8,.2,1), background .2s, border-color .2s; }
+  .nav-toggle:hover { border-color: var(--crimson); background: rgba(229,35,63,.14); }
+  .on-welcome .nav-toggle { display: none; }
+  .top { transition: transform .3s cubic-bezier(.2,.8,.2,1); }
+  .nav-collapsed .top { transform: translateX(-100%); }
+  html.nav-collapsed body:not(.on-welcome) { padding-left: 0; }
+  html.nav-collapsed body:not(.on-welcome) main { padding-top: 64px; }
+}
+@media (prefers-reduced-motion: reduce) { .nav-toggle, .top, body { transition: none !important; } }
+:root[data-theme="light"] .nav-toggle { background: #fff; }
+.nav-toggle .logo-ico { width: 24px; height: 24px; background: currentColor; -webkit-mask: url("logo.svg") center / contain no-repeat; mask: url("logo.svg") center / contain no-repeat; transition: transform .5s cubic-bezier(.2,.8,.2,1); }
+.nav-toggle:hover .logo-ico { transform: rotate(60deg); }
+@media (min-width: 761px) { .top .brand-mark { display: none; } .top .brand { padding-left: 46px; min-height: 38px; margin-top: -3px; } }
+
+/* hover the left edge or the logo to slide the hidden menu out over the page */
+.nav-hot { display: none; }
+@media (min-width: 761px) {
+  .nav-collapsed .nav-hot { display: block; position: fixed; top: 0; left: 0; bottom: 0; width: 16px; z-index: 6; }
+  html.nav-collapsed.nav-peek .top { transform: none; box-shadow: 18px 0 50px -12px rgba(0,0,0,.7); background: rgba(8,8,10,.94); }
+  :root[data-theme="light"].nav-collapsed.nav-peek .top { background: rgba(251,247,248,.97); box-shadow: 18px 0 50px -12px rgba(27,18,23,.25); }
+}
+
+/* when the input column is narrow, the example button drops to its own line instead of overlapping the results */
+.col-in { container-type: inline-size; }
+@container (max-width: 490px) {
+  .actions { flex-wrap: wrap; }
+  .actions .examples.dd { margin-left: 0; }
+  .actions .dd-menu { left: 0; right: auto; width: min(400px, 100cqw); }
+}

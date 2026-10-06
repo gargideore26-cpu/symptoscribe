@@ -182,9 +182,6 @@
     const chk = (r.checklist && r.checklist.length)
       ? `<div class="block"><h3>Still to ask <span class="chk-count" id="chk-count"></span></h3><ul class="checklist">${r.checklist.map((c, i) => `<li class="${c.done ? "is-done" : ""}"><label><input type="checkbox" data-i="${i}"${c.done ? " checked disabled" : ""}><span>${esc(c.label)}</span>${c.done ? "<small>mentioned</small>" : ""}</label></li>`).join("")}</ul></div>`
       : "";
-    const fups = r.follow_up_questions.length
-      ? `<div class="block"><h3>Questions the doctor may want to ask</h3><ul class="followups">${r.follow_up_questions.map((q) => `<li>${esc(q)}</li>`).join("")}</ul></div>`
-      : "";
     outEl.innerHTML = `<article class="result">
       <div class="verdict lvl-${esc(r.attention_level)}">
         <div class="verdict-text">${esc(title)}<small>${esc(sub)}</small></div>
@@ -198,7 +195,6 @@
       ${vit}
       <div class="block"><h3>Structured symptoms</h3>${tableHtml(r.symptoms)}</div>
       ${chk}
-      ${fups}
       <p class="safety-note">Decision support only. This is not a diagnosis; the doctor decides.</p>
     </article>`;
     renderMarked(r.text, r.highlights);
@@ -917,6 +913,33 @@
     });
   }
 
+  /* ------------------------------------------------------------ side menu hide / show */
+  function bindNavToggle() {
+    const btn = $("#nav-toggle"), root = document.documentElement, side = $(".top"), hot = $("#nav-hot");
+    let timer = null;
+    const sync = () => {
+      const hidden = root.classList.contains("nav-collapsed");
+      btn.setAttribute("aria-expanded", String(!hidden));
+      btn.setAttribute("aria-label", hidden ? "Show menu" : "Hide menu");
+    };
+    // while the menu is hidden, pointing at the left edge or at the logo slides it out over the page
+    const peek = () => { clearTimeout(timer); if (root.classList.contains("nav-collapsed")) root.classList.add("nav-peek"); };
+    const unpeek = () => { clearTimeout(timer); timer = setTimeout(() => root.classList.remove("nav-peek"), 250); };
+    [hot, side, btn].forEach((el) => {
+      el.addEventListener("mouseenter", peek);
+      el.addEventListener("mouseleave", unpeek);
+    });
+    side.addEventListener("focusin", peek);
+    side.addEventListener("focusout", unpeek);
+    sync();
+    btn.addEventListener("click", () => {
+      root.classList.toggle("nav-collapsed");
+      root.classList.remove("nav-peek");
+      try { localStorage.setItem("navCollapsed", root.classList.contains("nav-collapsed") ? "1" : "0"); } catch { /* private mode */ }
+      sync();
+    });
+  }
+
   /* ------------------------------------------------------------ init */
   async function init() {
     document.querySelectorAll("a[data-view]").forEach((a) => a.addEventListener("click", () => {
@@ -969,6 +992,7 @@
     bindTheme();
     bindReportDialog();
     bindLive();
+    bindNavToggle();
     bindQueue();
     bindIntake();
     bindWelcome();

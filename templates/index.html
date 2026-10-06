@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>SymptoScribe</title>
   <meta name="description" content="A tool for doctors that turns a patient's description of their symptoms into a structured clinical note.">
-  <script>try{var t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t;}catch(e){}</script>
+  <script>try{var t=localStorage.getItem("theme");if(t)document.documentElement.dataset.theme=t;if(localStorage.getItem("navCollapsed")==="1")document.documentElement.classList.add("nav-collapsed");}catch(e){}</script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600&family=Jost:wght@300;400;500;600&family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,500;1,6..72,400&family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -16,6 +16,12 @@
   <div class="cursor-glow" aria-hidden="true"></div>
   <div class="glow" aria-hidden="true"><div class="g-top"></div><div class="g-arc"></div><i class="star st1"></i><i class="star st2"></i><i class="star st3"></i><i class="star st4"></i><i class="star st5"></i></div>
   <a class="skip" href="#main">Skip to content</a>
+
+  <button class="nav-toggle" id="nav-toggle" type="button" aria-label="Hide menu" aria-controls="nav" aria-expanded="true" title="Hide or show the menu">
+    <span class="logo-ico" aria-hidden="true"></span>
+  </button>
+
+  <div class="nav-hot" id="nav-hot" aria-hidden="true"></div>
 
   <header class="top">
     <a class="brand" href="#home" data-view="home">
@@ -28,6 +34,8 @@
       <a href="#live" data-view="live">Live</a>
       <a href="#queue" data-view="queue">Queue</a>
       <a href="#intake" data-view="intake">Intake</a>
+      <a class="nav-sub nav-first" href="#about" data-view="about">Safety</a>
+      <a class="nav-sub" href="#evaluation" data-view="evaluation">For reviewers</a>
     </nav>
     <div class="top-right">
       <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch to light theme" title="Toggle light / dark">
@@ -237,7 +245,6 @@
 
   <footer class="site-foot">
     <span>Decision support for doctors. Not a diagnosis.</span>
-    <nav aria-label="More"><a href="#about" data-view="about">Safety</a><a href="#evaluation" data-view="evaluation">For reviewers</a></nav>
   </footer>
 
   <dialog id="report-dialog" class="modal modal-form" aria-labelledby="report-title">
