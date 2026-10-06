@@ -205,8 +205,12 @@
 
       <div class="card"><h2 class="plain">What it cannot do</h2>
       <ul class="plain-list">
-        <li>It does not suggest causes or treatments. The red flags are coarse rules for attention, not clinical triage.</li>
-        <li>It understands English and romanised Hindi (Hinglish). Devanagari script, Marathi and other languages are not supported yet.</li>
+        <li>It does not suggest causes or treatments. The red flags and the Queue order are coarse rules for attention, not clinical triage. The doctor decides.</li>
+        <li>It understands English, Hinglish (Hindi in English letters), and Hindi and Marathi in Devanagari script, including sentences that mix them. Its Hindi and Marathi word list is small, so a phrase it does not know can be missed. Other languages are not supported.</li>
+        <li>Age rules, vital-sign ranges and the "Still to ask" checklist are general adult and child rules written for this project. They are not a substitute for clinical guidelines or the doctor's own measurements.</li>
+        <li>Vital signs are read from what the patient typed or said. They are not measured, and a wrongly typed number gives a wrong result.</li>
+        <li>The PDF report cannot print Devanagari letters. For Hindi or Marathi text it lists the symptoms it recognised instead of the original words.</li>
+        <li>Speaking uses the browser's own speech recognition, which works in Chrome and Safari, needs internet, and can mishear Indian-language speech. Check the transcript.</li>
         <li>Symptoms outside its lexicon are missed unless they match a <em>pain in &lt;body part&gt;</em> pattern. A missing symptom is not proof that nothing was said.</li>
         <li>Unusual sentence structures can attach a detail to the wrong symptom. Always check the marked-up text.</li>
       </ul></div>
@@ -214,7 +218,8 @@
       <div class="card"><h2 class="plain">Data</h2>
         <p>The example cases and the coverage report on the Evaluation page use the public <a href="https://www.kaggle.com/datasets/niyarrbarman/symptom2disease" target="_blank" rel="noopener">Symptom2Disease</a> dataset from Kaggle (1,200 patient-style symptom descriptions). Its disease labels are never used or shown to patients: SymptoScribe organises symptoms and does not predict diseases.</p></div>
       <div class="card"><h2 class="plain">Privacy</h2>
-      <p>The text is analysed in memory and not stored or sent anywhere else. Do not enter names, phone numbers or other identifying details when demonstrating the project.</p></div>
+      <p>The Analyzer, Live and Queue pages read the text in memory and do not store it. Voice dictation is processed by the browser's speech service, not by SymptoScribe. The patient name, age, date and doctor typed into the report form are used for the PDF only and are never saved.</p>
+      <p>The one exception is <strong>Intake</strong>. A form a patient sends is saved on the computer running SymptoScribe until the doctor deletes it. There is no login yet, so anyone who can open the site can read these forms. Use it only on a computer and network you trust, and use made-up data when demonstrating the project.</p></div>
 
       <div class="card"><h2 class="plain">If someone is in danger</h2>
       <p>For chest pain, difficulty breathing, fainting, heavy bleeding or thoughts of self-harm, contact local emergency services right away. In India, Tele-MANAS offers free mental-health support on 14416 or 1-800-891-4416.</p></div>
@@ -222,8 +227,9 @@
       <div class="card"><h2 class="plain">Future work</h2>
       <ul class="plain-list">
         <li>Train and compare a BioBERT or MuRIL token-classification model against this rule-based baseline.</li>
-        <li>Add Devanagari input and Marathi using AI4Bharat resources.</li>
-        <li>Add a patient-facing intake form that sends the finished note straight to the doctor.</li>
+        <li>Widen the Hindi and Marathi vocabulary using AI4Bharat resources, and add more languages.</li>
+        <li>Add doctor accounts, a login and HTTPS to Intake, with a proper database and a privacy review, before any real patient data is used.</li>
+        <li>Show the source guideline behind each red-flag rule.</li>
         <li>Grow the annotated evaluation set with real, consented, anonymised examples.</li>
       </ul></div>
     </section>
