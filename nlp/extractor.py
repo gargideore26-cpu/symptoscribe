@@ -969,13 +969,26 @@ def process_sentence(text, toks, state, ref):
 def extract_context(text, toks_all, symptom_spans) -> dict:
     low = text.translate(APOS)
     ctx = {"age": None, "gender": None, "medications": [], "conditions": [], "allergies": [], "spans": []}
+    ctx["age_months"] = None
+    ctx["age_label"] = None
+    inf = re.search(r"(\d{1,2})\s*[- ]?\s*(months?|mos?|weeks?|wks?|days?)\s*[- ]?\s*old", low, re.I)
     m = re.search(r"(\d{1,3})\s*[- ]?\s*(?:years?|yrs?|y/o|yo)\s*[- ]?\s*old", low, re.I)
-    if not m:
+    if inf and not m:
+        n, unit = int(inf.group(1)), inf.group(2).lower()
+        months = n if unit.startswith("mo") else (n / 4.3 if unit.startswith(("week", "wk")) else n / 30)
+        if 0 < n and months < 24:
+            ctx["age"] = 0 if months < 12 else int(months // 12)
+            ctx["age_months"] = round(months, 1)
+            ctx["age_label"] = f"{n}-{unit.rstrip('s')}-old"
+            ctx["spans"].append({"label": "context", "start": inf.start(), "end": inf.end(), "text": low[inf.start():inf.end()]})
+    if not m and not inf:
         m = re.search(r"\bage\s*(?:is|:)?\s*(\d{1,3})\b", low, re.I)
     if not m:
         m = re.search(r"\bi(?:'m| am)\s+(\d{1,3})\b(?!\s*(?:days?|hours?|weeks?|months?|kg|cm|%|/|years? of))", low, re.I)
-    if m and 0 < int(m.group(1)) < 120:
+    if m and 0 < int(m.group(1)) < 120 and ctx["age_label"] is None:
         ctx["age"] = int(m.group(1))
+        ctx["age_months"] = ctx["age"] * 12
+        ctx["age_label"] = f"{ctx['age']}-year-old"
         ctx["spans"].append({"label": "context", "start": m.start(), "end": m.end(), "text": low[m.start():m.end()]})
     g = re.search(r"\b(?:i(?:'m| am)\s+(?:a\s+|an\s+)?(?:\d{1,3}\s*[- ]?\s*(?:years?|yrs?)\s*[- ]?\s*old\s+)?)(male|female|man|woman|boy|girl)\b", low, re.I)
     if not g:
@@ -1046,6 +1059,192 @@ def evaluate_red_flags(records, text) -> list:
             flags.append({"id": rule["id"], "title": rule["title"], "level": rule["level"], "advice": rule["advice"], "evidence": evidence})
     flags.sort(key=lambda f: -L.LEVEL_RANK[f["level"]])
     return flags
+
+
+# ------------------------------------------------------------------ age-aware red flags
+def _present(records, *names):
+    return [r for r in records if r["status"] == "present" and r["name"] in names]
+
+
+def age_flags(records, ctx) -> list:
+    """Safety rules that depend on age or pregnancy. They raise attention, they never name a disease."""
+    months = ctx.get("age_months")
+    flags = []
+
+    def add(rid, title, level, advice, evidence, why):
+        flags.append({"id": rid, "title": title, "level": level, "advice": advice, "evidence": [r["name"] for r in evidence], "why": why})
+
+    fever = _present(records, "fever")
+    gi = _present(records, "vomiting", "diarrhea")
+    dizzy = _present(records, "dizziness", "fainting")
+    pregnant = "pregnancy" in ctx.get("conditions", [])
+    if months is not None:
+        label = ctx["age_label"]
+        if months < 3 and fever:
+            add("AG1", "Fever in a very young baby", "emergency", "Fever in a baby under 3 months needs emergency evaluation.", fever, f"Age: {label}")
+        elif months < 12 and fever:
+            add("AG1", "Fever in an infant", "urgent", "Fever in an infant should be assessed the same day.", fever, f"Age: {label}")
+        elif months < 60 and fever:
+            days = max((r["duration"]["days"] for r in fever if r["duration"]), default=0)
+            add("AG2", "Fever in a young child", "urgent" if days >= 2 else "attention",
+                "Fever in a young child that lasts more than a day or two should be assessed.", fever, f"Age: {label}")
+        if months >= 65 * 12 and fever:
+            add("AG3", "Fever in an older adult", "urgent", "Older adults can become seriously ill with fever and may show few other signs.", fever, f"Age: {label}")
+        if (months < 60 or months >= 65 * 12) and gi:
+            add("AG4", "Vomiting or loose motions at this age", "urgent", "Dehydration develops faster in young children and older adults.", gi, f"Age: {label}")
+        if months >= 65 * 12 and dizzy:
+            add("AG5", "Dizziness or fainting in an older adult", "urgent", "Dizziness at this age raises the risk of falls and may reflect blood pressure or heart rhythm problems.", dizzy, f"Age: {label}")
+    if pregnant:
+        bleed = _present(records, "bleeding")
+        if bleed:
+            add("AG6", "Bleeding in pregnancy", "emergency", "Any bleeding in pregnancy needs urgent medical assessment.", bleed, "Pregnancy mentioned")
+        pain = _present(records, "stomach pain", "back pain")
+        if pain:
+            add("AG7", "Abdominal or back pain in pregnancy", "urgent", "Pain in pregnancy should be assessed promptly.", pain, "Pregnancy mentioned")
+        pre = _present(records, "headache")
+        if pre and _present(records, "swelling", "blurred vision"):
+            add("AG8", "Headache with swelling or blurred vision in pregnancy", "emergency", "This combination in pregnancy needs urgent assessment of blood pressure.", pre, "Pregnancy mentioned")
+        if fever:
+            add("AG9", "Fever in pregnancy", "urgent", "Fever in pregnancy needs prompt evaluation.", fever, "Pregnancy mentioned")
+    return flags
+
+
+# ------------------------------------------------------------------ vitals
+VITAL_LABEL = {"bp": "Blood pressure", "pulse": "Pulse", "spo2": "Oxygen saturation", "rr": "Respiratory rate",
+               "temp": "Temperature", "weight": "Weight", "glucose": "Blood sugar"}
+_SEP = r"(?:\s*(?:is|was|of|at|around|about|approx|reading|showing|shows|=|:|-)\s*)*\s*"
+VITAL_PATTERNS = [
+    ("bp", re.compile(r"\b(?:bp|b\.p\.?|blood pressure)" + _SEP + r"(\d{2,3})\s*/\s*(\d{2,3})\b(?:\s*mm\s*hg)?", re.I)),
+    ("bp", re.compile(r"\b(\d{2,3})\s*/\s*(\d{2,3})\s*mm\s*hg\b", re.I)),
+    ("pulse", re.compile(r"\b(?:pulse(?: rate)?|heart rate|hr)" + _SEP + r"(\d{2,3})\b(?:\s*(?:bpm|/min|per minute|beats(?: per minute)?))?", re.I)),
+    ("pulse", re.compile(r"\b(\d{2,3})\s*(?:bpm|beats per minute)\b", re.I)),
+    ("spo2", re.compile(r"\b(?:spo\s?2|sp02|o2 sat(?:uration)?|oxygen(?: level| saturation| sat)?|saturation)" + _SEP + r"(\d{2,3})\s*%?", re.I)),
+    ("spo2", re.compile(r"\b(\d{2,3})\s*%\s*(?:spo\s?2|oxygen|saturation)", re.I)),
+    ("rr", re.compile(r"\b(?:rr|resp(?:iratory)? rate|breathing rate)" + _SEP + r"(\d{1,2})\b(?:\s*(?:/min|per minute|breaths))?", re.I)),
+    ("weight", re.compile(r"\b(?:weight|weighs?|weighed|wt)" + _SEP + r"(\d{2,3}(?:\.\d)?)\s*(kg|kgs|kilos?|lbs?|pounds)\b", re.I)),
+    ("glucose", re.compile(r"\b(?:blood sugar|sugar|glucose|bsl|rbs|fbs|ppbs)(?: level)?" + _SEP + r"(\d{2,3})\b(?:\s*mg\s*/?\s*dl)?", re.I)),
+]
+
+
+def _status(kind, v, v2=None, fasting=False):
+    """-> (status, note). status is normal | low | high | critical."""
+    if kind == "bp":
+        if v >= 180 or v2 >= 120:
+            return "critical", "very high (180/120 or above)"
+        if v >= 140 or v2 >= 90:
+            return "high", "above 140/90"
+        if v < 90 or v2 < 60:
+            return "low", "below 90/60"
+        return "normal", "within 90/60 to 140/90"
+    if kind == "pulse":
+        if v > 130 or v < 40:
+            return "critical", "far outside 60 to 100"
+        if v > 100:
+            return "high", "above 100 per minute"
+        if v < 60:
+            return "low", "below 60 per minute"
+        return "normal", "60 to 100 per minute"
+    if kind == "spo2":
+        if v < 90:
+            return "critical", "below 90%"
+        if v < 95:
+            return "low", "below 95%"
+        return "normal", "95% or above"
+    if kind == "rr":
+        if v > 30 or v < 8:
+            return "critical", "far outside 12 to 20"
+        if v > 20:
+            return "high", "above 20 per minute"
+        if v < 12:
+            return "low", "below 12 per minute"
+        return "normal", "12 to 20 per minute"
+    if kind == "glucose":
+        if v < 54 or v > 400:
+            return "critical", "dangerously low or high"
+        if v < 70:
+            return "low", "below 70 mg/dL"
+        if v >= (126 if fasting else 200):
+            return "high", ("126 mg/dL or above when fasting" if fasting else "200 mg/dL or above")
+        return "normal", "in the usual range"
+    if kind == "temp":
+        c = (v - 32) * 5 / 9 if v > 45 else v
+        if c >= 40:
+            return "critical", "40 C (104 F) or above"
+        if c >= 38:
+            return "high", "38 C (100.4 F) or above"
+        if c < 35:
+            return "low", "below 35 C"
+        return "normal", "usual range"
+    return "normal", ""
+
+
+def extract_vitals(text, records) -> list:
+    low = text.translate(APOS)
+    found, taken = [], []
+
+    def free(a, b):
+        return all(b <= s or a >= e for s, e in taken)
+
+    for kind, rx in VITAL_PATTERNS:
+        for m in rx.finditer(low):
+            a, b = m.start(), m.end()
+            if not free(a, b):
+                continue
+            if kind == "bp":
+                sys_, dia = int(m.group(1)), int(m.group(2))
+                if not (60 <= sys_ <= 260 and 30 <= dia <= 160 and sys_ > dia):
+                    continue
+                value, unit, st = f"{sys_}/{dia}", "mmHg", _status("bp", sys_, dia)
+            else:
+                n = float(m.group(1))
+                if kind == "pulse" and not 30 <= n <= 220: continue
+                if kind == "spo2" and not 50 <= n <= 100: continue
+                if kind == "rr" and not 6 <= n <= 60: continue
+                if kind == "glucose" and not 30 <= n <= 600: continue
+                if kind == "weight":
+                    value, unit, st = f"{n:g}", m.group(2).lower(), ("normal", "")
+                else:
+                    fasting = bool(re.search(r"fasting|fbs", low[max(0, a - 12):b], re.I))
+                    unit = {"pulse": "per min", "spo2": "%", "rr": "per min", "glucose": "mg/dL"}[kind]
+                    value, st = f"{n:g}", _status(kind, n, fasting=fasting)
+            taken.append((a, b))
+            found.append({"kind": kind, "label": VITAL_LABEL[kind], "value": value, "unit": unit, "status": st[0], "note": st[1],
+                          "text": low[a:b], "start": a, "end": b})
+    for r in records:
+        t = r.get("temperature")
+        if t and not any(v["kind"] == "temp" for v in found):
+            st = _status("temp", t["value"])
+            found.append({"kind": "temp", "label": VITAL_LABEL["temp"], "value": f"{t['value']:g}", "unit": "°" + t["unit"], "status": st[0], "note": st[1],
+                          "text": t["text"], "start": t["start"], "end": t["end"]})
+    found.sort(key=lambda v: v["start"])
+    return found
+
+
+VITAL_FLAG = {
+    ("spo2", "critical"): ("emergency", "Low oxygen saturation", "An oxygen saturation below 90% needs urgent medical help."),
+    ("spo2", "low"): ("urgent", "Slightly low oxygen saturation", "An oxygen saturation below 95% should be assessed promptly."),
+    ("bp", "critical"): ("emergency", "Very high blood pressure", "A reading of 180/120 or above needs urgent assessment."),
+    ("bp", "high"): ("attention", "Raised blood pressure", "Blood pressure above 140/90 should be reviewed."),
+    ("bp", "low"): ("urgent", "Low blood pressure", "Low blood pressure with symptoms needs prompt assessment."),
+    ("pulse", "critical"): ("emergency", "Very abnormal pulse", "A pulse far outside the usual range needs urgent assessment."),
+    ("pulse", "high"): ("attention", "Fast pulse", "A resting pulse above 100 should be reviewed."),
+    ("rr", "critical"): ("emergency", "Very abnormal breathing rate", "A breathing rate far outside the usual range needs urgent assessment."),
+    ("rr", "high"): ("attention", "Fast breathing", "A breathing rate above 20 per minute should be reviewed."),
+    ("glucose", "critical"): ("emergency", "Dangerous blood sugar", "A blood sugar this far outside the usual range needs urgent help."),
+    ("glucose", "low"): ("urgent", "Low blood sugar", "Low blood sugar can worsen quickly and should be treated promptly."),
+    ("glucose", "high"): ("attention", "High blood sugar", "A raised blood sugar should be reviewed."),
+}
+
+
+def vital_flags(vitals) -> list:
+    out = []
+    for v in vitals:
+        rule = VITAL_FLAG.get((v["kind"], v["status"]))
+        if rule:
+            level, title, advice = rule
+            out.append({"id": "V-" + v["kind"], "title": title, "level": level, "advice": advice, "evidence": [v["label"]],
+                        "why": f"{v['label']} {v['value']} {v['unit']}".strip()})
+    return out
 
 
 HINDI_UNITS = {"din", "dino", "hafte", "hafta", "haftey", "hafton", "mahine", "mahina", "mahino", "saal", "saalon", "ghante", "ghanta"}
@@ -1129,10 +1328,10 @@ def build_summary(records, ctx) -> str:
     others = [r for r in records if r["subject"] != "patient" and r["status"] in ("present", "uncertain")]
     lines = []
     who = "Patient"
-    if ctx["age"] or ctx["gender"]:
+    if ctx["age_label"] or ctx["gender"]:
         bits = []
-        if ctx["age"]:
-            bits.append(f"{ctx['age']}-year-old")
+        if ctx["age_label"]:
+            bits.append(ctx["age_label"])
         if ctx["gender"]:
             bits.append(ctx["gender"])
         who = "Patient (" + " ".join(bits) + ")"
@@ -1161,6 +1360,16 @@ def build_summary(records, ctx) -> str:
     if ctx["allergies"]:
         lines.append("Allergic to " + _join(ctx["allergies"]) + ".")
     return " ".join(lines)
+
+
+def vitals_sentence(vitals) -> str:
+    if not vitals:
+        return ""
+    bits = []
+    for v in vitals:
+        tag = "" if v["status"] == "normal" else f" ({v['status']})"
+        bits.append(f"{v['label'].lower() if v['kind'] != 'bp' else 'BP'} {v['value']} {v['unit']}".strip() + tag)
+    return " Vitals: " + ", ".join(bits) + "."
 
 
 def _join(items) -> str:
@@ -1250,6 +1459,9 @@ def analyze(text: str, ref_date: Optional[dt.date] = None) -> dict:
 
     ctx = extract_context(text, toks_all, None)
     flags = evaluate_red_flags(recs, text)
+    vitals = extract_vitals(text, recs)
+    flags += age_flags(recs, ctx) + vital_flags(vitals)
+    flags.sort(key=lambda f: -L.LEVEL_RANK[f["level"]])
     level = max((f["level"] for f in flags), key=lambda x: L.LEVEL_RANK[x], default="routine")
 
     highlights = []
@@ -1267,6 +1479,9 @@ def analyze(text: str, ref_date: Optional[dt.date] = None) -> dict:
         for q in r["quality"]:
             highlights.append({"start": q["start"], "end": q["end"], "label": "quality", "text": q["text"], "symptom": r["name"]})
     highlights.extend(ctx["spans"])
+    for v in vitals:
+        if v["kind"] != "temp":
+            highlights.append({"start": v["start"], "end": v["end"], "label": "vital", "text": v["text"], "symptom": ""})
     seen, uniq = set(), []
     for h in highlights:
         k = (h["start"], h["end"], h["label"])
@@ -1281,12 +1496,13 @@ def analyze(text: str, ref_date: Optional[dt.date] = None) -> dict:
         "text": text,
         "language": indic.detect_language(text),
         "reference_date": ref.isoformat(),
-        "patient": {"age": ctx["age"], "gender": ctx["gender"], "medications": ctx["medications"],
+        "patient": {"age": ctx["age"], "age_months": ctx["age_months"], "age_label": ctx["age_label"], "gender": ctx["gender"], "medications": ctx["medications"],
                     "conditions": ctx["conditions"], "allergies": ctx["allergies"]},
         "symptoms": recs,
         "red_flags": flags,
         "attention_level": level,
-        "summary": build_summary(recs, ctx),
+        "vitals": vitals,
+        "summary": build_summary(recs, ctx) + vitals_sentence(vitals),
         "follow_up_questions": follow_up_questions(recs),
         "unlinked_details": unlinked_all,
         "highlights": uniq,

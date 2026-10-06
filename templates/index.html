@@ -26,11 +26,6 @@
       <a href="#home" data-view="home">Home</a>
       <a href="#analyzer" data-view="analyzer">Analyzer</a>
       <a href="#live" data-view="live">Live</a>
-      <a href="#compare" data-view="compare">Compare</a>
-      <a href="#pipeline" data-view="pipeline">Pipeline</a>
-      <a href="#how" data-view="how">How it works</a>
-      <a href="#evaluation" data-view="evaluation">Evaluation</a>
-      <a href="#about" data-view="about">Limits and ethics</a>
     </nav>
     <div class="top-right">
       <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch to light theme" title="Toggle light / dark">
@@ -115,7 +110,6 @@
           </div>
         </div>
       </div>
-      <div id="trace-slot" class="trace-below"></div>
       </div>
 
     </section>
@@ -151,102 +145,6 @@
       </div>
     </section>
 
-    <!-- ====================================================== COMPARE VISITS -->
-    <section id="view-compare" class="view" hidden>
-      <div class="window">
-        <div class="win-bar"><i></i><i></i><i></i><span>SymptoScribe · Compare visits</span></div>
-        <h2 class="section-title">Compare two visits</h2>
-        <p class="lede">Paste what the patient said at the earlier visit and at the latest one. We show what is new, what went away and what changed.</p>
-        <div class="cmp-grid">
-          <div>
-            <label class="field-label" for="cmp-before">Earlier visit</label>
-            <textarea id="cmp-before" rows="6" maxlength="5000" spellcheck="false" placeholder="What the patient described last time"></textarea>
-          </div>
-          <div>
-            <label class="field-label" for="cmp-after">Latest visit</label>
-            <textarea id="cmp-after" rows="6" maxlength="5000" spellcheck="false" placeholder="What the patient describes now"></textarea>
-          </div>
-        </div>
-        <div class="actions">
-          <button id="cmp-run" class="btn primary" type="button">Compare visits</button>
-          <button id="cmp-sample" class="btn" type="button">Load sample</button>
-          <button id="cmp-clear" class="btn" type="button">Clear</button>
-        </div>
-        <div id="cmp-out" class="cmp-out" aria-live="polite"></div>
-      </div>
-    </section>
-
-    <!-- ====================================================== PIPELINE VIEWER -->
-    <section id="view-pipeline" class="view" hidden>
-      <div class="window">
-        <div class="win-bar"><i></i><i></i><i></i><span>SymptoScribe · Pipeline viewer</span></div>
-        <h2 class="section-title">Watch the engine read a text</h2>
-        <p class="lede">Type a description and step through the eight stages one at a time: tokens first, then symptoms, negation, details and finally the note.</p>
-        <textarea id="pl-text" rows="3" maxlength="5000" spellcheck="false" placeholder="e.g. Headace and fevar since sunday, no cough. It gets worse after eating."></textarea>
-        <div class="actions">
-          <button id="pl-run" class="btn primary" type="button">Run pipeline</button>
-          <button id="pl-sample" class="btn" type="button">Sample text</button>
-          <button id="pl-use" class="btn" type="button">Use analyzer text</button>
-        </div>
-        <div id="pl-error" aria-live="polite"></div>
-        <div id="pl-stage" class="pl-stage" hidden>
-          <ol class="pl-steps" id="pl-steps" aria-label="Pipeline stages"></ol>
-          <div class="pl-card" id="pl-card" aria-live="polite"></div>
-          <div class="pl-controls">
-            <button class="btn" type="button" id="pl-prev">← Back</button>
-            <button class="btn primary" type="button" id="pl-next">Next step →</button>
-          </div>
-          <p class="pl-hint" id="pl-hint"></p>
-        </div>
-      </div>
-    </section>
-
-    <!-- ====================================================== HOW IT WORKS -->
-    <section id="view-how" class="view prose" hidden>
-      <div class="page-head"><span class="badge">ϟ How it works</span>
-      <h1>How the text becomes a note</h1>
-      <p class="lede">The engine is a transparent pipeline of language-processing steps. Each one can be explained, tested and improved on its own, which matters when the output is read by a doctor.</p></div>
-
-      <ol class="steps">
-        <li>
-          <h2>Clean and tokenise</h2>
-          <p>The text is split into sentences and words. Every word remembers where it started in the original text, so results can be highlighted exactly where the patient wrote them.</p>
-        </li>
-        <li>
-          <h2>Normalise spelling</h2>
-          <p>Common slips are corrected before matching: <code>fevar</code> becomes <code>fever</code>, <code>dont</code> becomes <code>don't</code>, <code>wks</code> becomes <code>weeks</code>.</p>
-        </li>
-        <li>
-          <h2>Find the symptoms</h2>
-          <p>Named entity recognition against a lexicon of about 40 symptoms and 300 phrasings in English and Hinglish (<code>bukhar</code>, <code>sar dard</code>, <code>pet me dard</code>). The longest phrase wins, plurals are handled, and unknown spellings are matched by edit distance. Patterns such as <em>pain in my chest</em> or <em>left arm hurts</em> find symptoms the lexicon does not list.</p>
-        </li>
-        <li>
-          <h2>Split into clauses</h2>
-          <p>Commas that separate ideas, <em>but</em>, and <em>and I</em> start a new clause, while commas inside a list (<em>fever, cough and cold</em>) do not. Clauses decide which details belong to which symptom.</p>
-        </li>
-        <li>
-          <h2>Decide the status of each symptom</h2>
-          <p>A symptom can be present, denied, uncertain, resolved, a past episode or someone else's. Negation uses a scope rule in the style of NegEx: <em>no</em> reaches every symptom in the list until a word like <em>but</em> ends it, while <em>no relief</em> and <em>not improving</em> are recognised as not being negations of a symptom. Hindi-style negation after the symptom (<em>khansi nahi hai</em>) is handled too.</p>
-        </li>
-        <li>
-          <h2>Extract the details</h2>
-          <p>Duration (<em>for a couple of weeks</em>, <em>2-3 days</em>, <em>since Sunday</em>, <em>kal se</em>), onset, frequency (<em>3 times a day</em>), severity (words, <em>7/10</em>, or a temperature reading), course (worsening, intermittent), triggers (<em>after eating</em>), body location, radiation and quality (sharp, burning).</p>
-        </li>
-        <li>
-          <h2>Link details to symptoms</h2>
-          <p>Details attach to the nearest symptom, a trailing detail covers the whole list (<em>fever and cough for 3 days</em>), and a sentence like <em>It started two days ago</em> is carried over to the symptom mentioned just before.</p>
-        </li>
-        <li>
-          <h2>Safety checks and the note</h2>
-          <p>Simple red-flag rules highlight what should not wait (chest pain, breathlessness, fever for 3 or more days, self-harm language). Missing details become follow-up questions, and a template writes the summary sentence. The tool never names a disease.</p>
-        </li>
-      </ol>
-
-      <div class="card"><h2 class="plain">Why rules and lexicons instead of a neural model?</h2>
-      <p>For a clinical note, a wrong answer should be explainable and fixable. Rules need no training data, behave the same every time, and show a reason for every decision (open <em>How the engine read this text</em> at the bottom of the analyzer). The evaluation tab measures how well they do. The natural next step is to train a model such as BioBERT or MuRIL on the same task and compare it against this baseline.</p></div>
-    </section>
-
-    <!-- ====================================================== EVALUATION -->
     <section id="view-evaluation" class="view prose" hidden>
       <div class="page-head"><span class="badge">✦ Evaluation</span>
       <h1>How well does it work?</h1>
@@ -290,6 +188,11 @@
       </ul></div>
     </section>
   </main>
+
+  <footer class="site-foot">
+    <span>Decision support for doctors. Not a diagnosis.</span>
+    <nav aria-label="More"><a href="#about" data-view="about">Safety</a><a href="#evaluation" data-view="evaluation">For reviewers</a></nav>
+  </footer>
 
   <dialog id="report-dialog" class="modal modal-form" aria-labelledby="report-title">
     <button class="modal-x" type="button" id="report-x" aria-label="Close">×</button>

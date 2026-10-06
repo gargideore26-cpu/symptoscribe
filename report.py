@@ -151,6 +151,20 @@ def build_report_pdf(r: dict, details: dict = None) -> bytes:
     pdf.set_text_color(*INK)
     pdf.multi_cell(w, 6.5, _t(r.get("summary", "")), new_x=XPos.LMARGIN, new_y=YPos.NEXT)
 
+    vitals = r.get("vitals") or []
+    if vitals:
+        heading("Vital signs")
+        for v in vitals:
+            pdf.set_font("Helvetica", "B", 10.5)
+            pdf.set_text_color(*INK)
+            txt = f"{v['label']}: {v['value']} {v['unit']}".replace("°", " deg ")
+            pdf.cell(70, 6, _t(txt))
+            pdf.set_font("Helvetica", "B" if v["status"] != "normal" else "", 10.5)
+            pdf.set_text_color(*(CRIMSON if v["status"] != "normal" else MUTED))
+            pdf.cell(0, 6, _t(("Normal" if v["status"] == "normal" else v["status"].capitalize()) + (f" - {v['note']}" if v.get("note") else "")),
+                     new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+        pdf.set_text_color(*INK)
+
     flags = r.get("red_flags") or []
     if flags:
         heading("Red flags")
@@ -160,7 +174,8 @@ def build_report_pdf(r: dict, details: dict = None) -> bytes:
             pdf.set_font("Helvetica", "", 10)
             pdf.set_text_color(*MUTED)
             pdf.set_x(pdf.l_margin + 4)
-            pdf.multi_cell(w - 4, 5, _t(f.get("advice", "")), new_x=XPos.LMARGIN, new_y=YPos.NEXT)
+            why = f"  ({f['why']})" if f.get("why") else ""
+            pdf.multi_cell(w - 4, 5, _t(f.get("advice", "") + why), new_x=XPos.LMARGIN, new_y=YPos.NEXT)
             pdf.set_text_color(*INK)
 
     heading("Structured symptoms")

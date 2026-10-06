@@ -15,7 +15,7 @@
   const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
   /* ------------------------------------------------------------ views */
-  const VIEWS = ["welcome", "home", "analyzer", "live", "compare", "pipeline", "how", "evaluation", "about"];
+  const VIEWS = ["welcome", "home", "analyzer", "live", "evaluation", "about"];
   let evalLoaded = false;
   let datasetLoaded = false;
 
@@ -43,16 +43,16 @@
   /* ------------------------------------------------------------ marked-up text */
   const PRIORITY = {
     symptom: 1, negated: 1, uncertain: 1, history: 1, other: 1,
-    trigger: 2, duration: 3, severity: 4, location: 5, trend: 6, onset: 6, frequency: 6,
+    trigger: 2, duration: 3, severity: 4, vital: 4, location: 5, trend: 6, onset: 6, frequency: 6,
     quality: 7, medication: 8, condition: 8, context: 8,
   };
   const LABEL_NAMES = {
     symptom: "Symptom", negated: "Not present", uncertain: "Unsure", history: "Past episode", other: "Someone else",
     duration: "Duration", severity: "Severity", trend: "Course", onset: "Course", frequency: "Course",
     trigger: "Trigger", location: "Location", quality: "Feels like",
-    medication: "Background", condition: "Background", context: "Background",
+    medication: "Background", condition: "Background", context: "Background", vital: "Vital sign",
   };
-  const LEGEND_ORDER = ["symptom", "negated", "uncertain", "history", "other", "duration", "severity", "trend", "trigger", "location", "quality", "context"];
+  const LEGEND_ORDER = ["symptom", "negated", "uncertain", "history", "other", "duration", "severity", "trend", "trigger", "location", "quality", "vital", "context"];
 
   function renderMarked(text, highlights) {
     const cps = Array.from(text); // Python offsets count code points
@@ -163,36 +163,6 @@
       <tbody>${body}</tbody></table></div>`;
   }
 
-  function traceHtml(r) {
-    const rows = r.symptoms
-      .map(
-        (s) =>
-          `<tr><td>${esc(cap(s.name))}</td><td>${esc(s.status)}${s.reason ? " — " + esc(s.reason) : ""}</td><td>${esc(s.method)}</td><td>${Math.round(s.confidence * 100)}%</td></tr>`
-      )
-      .join("");
-    const toks = r.tokens
-      .slice(0, 120)
-      .map((t) => `<span class="tok">${esc(t.text)}<sub>${t.sent + 1}.${t.clause + 1}</sub></span>`)
-      .join("");
-    const unl = r.unlinked_details.length
-      ? `<h3>Details that could not be linked to a symptom</h3><p class="unlinked">${r.unlinked_details.map((u) => `“${esc(u.text)}” (${esc(u.kind)})`).join(", ")}</p>`
-      : "";
-    return `<details class="trace card trace-card">
-      <summary>How the engine read this text</summary>
-      <div class="trace-body">
-        <h3>Decisions</h3>
-        <div class="table-wrap"><table><thead><tr><th>Symptom</th><th>Status and reason</th><th>Matched by</th><th>Confidence</th></tr></thead><tbody>${rows || '<tr><td colspan="4" class="muted">Nothing found.</td></tr>'}</tbody></table></div>
-        <h3>Tokens (sentence.clause)</h3>
-        <div class="tokens">${toks}</div>
-        ${unl}
-      </div></details>`;
-  }
-
-  function renderTrace(r) {
-    const slot = $("#trace-slot");
-    if (slot) slot.innerHTML = traceHtml(r);
-  }
-
   function render(r) {
     lastResult = r;
     const [title, fallback] = LEVELS[r.attention_level] || LEVELS.routine;
@@ -201,9 +171,12 @@
       ? `<div class="block"><h3>Red flags</h3><ul class="flags">${r.red_flags
           .map(
             (f) =>
-              `<li class="lvl-${esc(f.level)}"><span class="flag-title">${esc(f.title)}</span><span class="flag-level">${esc(LEVELS[f.level][0])}</span><p>${esc(f.advice)}</p></li>`
+              `<li class="lvl-${esc(f.level)}"><span class="flag-title">${esc(f.title)}</span><span class="flag-level">${esc(LEVELS[f.level][0])}</span><p>${esc(f.advice)}</p>${f.why ? `<small class="flag-why">${esc(f.why)}</small>` : ""}</li>`
           )
           .join("")}</ul></div>`
+      : "";
+    const vit = (r.vitals && r.vitals.length)
+      ? `<div class="block"><h3>Vital signs</h3><div class="vitals">${r.vitals.map((v) => `<div class="vital vs-${esc(v.status)}"><span class="v-label">${esc(v.label)}</span><span class="v-value">${esc(v.value)}<small>${esc(v.unit)}</small></span><span class="v-status">${esc(v.status === "normal" ? "Normal" : cap(v.status))}</span>${v.note ? `<small class="v-note">${esc(v.note)}</small>` : ""}</div>`).join("")}</div></div>`
       : "";
     const fups = r.follow_up_questions.length
       ? `<div class="block"><h3>Questions the doctor may want to ask</h3><ul class="followups">${r.follow_up_questions.map((q) => `<li>${esc(q)}</li>`).join("")}</ul></div>`
@@ -218,11 +191,12 @@
       </div>
       <div class="block"><h3>Note for the doctor<span class="lang-badge" title="Detected input language">${esc(r.language ? (r.language.label || r.language.name) : "English")}</span></h3><p class="note">${esc(r.summary)}</p></div>
       ${flags}
+      ${vit}
       <div class="block"><h3>Structured symptoms</h3>${tableHtml(r.symptoms)}</div>
       ${fups}
+      <p class="safety-note">Decision support only. This is not a diagnosis; the doctor decides.</p>
     </article>`;
     renderMarked(r.text, r.highlights);
-    renderTrace(r);
     $("#copy-note").addEventListener("click", copyNote);
     $("#dl-report").addEventListener("click", downloadReport);
   }
@@ -603,38 +577,7 @@
     });
   }
 
-  /* ------------------------------------------------------------ pipeline viewer */
-  const STAGES = [
-    { title: "Clean and tokenise", concept: "Tokenisation",
-      what: "The text is cut into sentences and words (tokens). Every token remembers the exact character where it started, so later results can be highlighted on the original text." },
-    { title: "Normalise spelling", concept: "Text normalisation",
-      what: "Common slips and shortcuts are corrected before matching, for example fevar → fever and dont → don't. Hindi and Marathi words are mapped onto the words the lexicon knows." },
-    { title: "Find the symptoms", concept: "Named entity recognition (lexicon)",
-      what: "The tokens are matched against a lexicon of symptoms. The longest phrase wins, plurals are handled, and misspelt words are matched by edit distance." },
-    { title: "Split into clauses", concept: "Shallow syntax",
-      what: "Each sentence is divided into clauses at commas that separate ideas and at words like but. A clause decides which words can describe which symptom." },
-    { title: "Decide the status of each symptom", concept: "Negation scope (NegEx-style)",
-      what: "Every symptom is marked present, denied, unsure, resolved, a past episode or someone else's, by looking at the words around it, such as no, maybe or my mother." },
-    { title: "Extract the details", concept: "Temporal and attribute extraction",
-      what: "Durations, severity, course, triggers, body locations, quality and temperatures are picked out of the text. At this point they are not yet tied to a symptom." },
-    { title: "Link details to symptoms", concept: "Attachment heuristics",
-      what: "Each detail is attached to the symptom it describes: usually the nearest one, or all symptoms in a list when the detail comes last." },
-    { title: "Safety checks and the note", concept: "Rules and template generation",
-      what: "Simple red-flag rules check what should not wait, missing details become follow-up questions, and a template writes the note for the doctor. No disease is ever named." },
-  ];
-  const METHOD = { lexicon: "dictionary match", fuzzy: "spelling-tolerant match", plural: "plural form", pattern: "pain-in-body-part pattern", inferred: "inferred from temperature", coreference: "linked to an earlier pain" };
-  const KIND_LABEL = { duration: "duration", severity: "severity", course: "course", location: "location", trigger: "trigger", quality: "feels like", temperature: "temperature" };
-  const KIND_HL = { duration: "duration", severity: "severity", course: "trend", location: "location", trigger: "trigger", quality: "quality", temperature: "severity" };
-  const STATUS_HL = { present: "symptom", absent: "negated", resolved: "negated", uncertain: "uncertain", history: "history" };
-  const STATUS_NAME = { present: "Present", absent: "Denied", resolved: "Resolved", uncertain: "Possible", history: "Past episode" };
-  const AUTO_MS = 5200;
-  const pl = { data: null, step: 0, timer: null, auto: false };
-
   // text with marked spans (offsets count code points, like the engine)
-  function spanHtml(text, spans) {
-    return `<p class="pl-text">${spanInner(text, spans)}</p>`;
-  }
-
   function spanInner(text, spans) {
     const cps = Array.from(text), n = cps.length;
     const owner = new Array(n).fill(-1);
@@ -653,123 +596,6 @@
       i = j;
     }
     return html;
-  }
-
-  const chip = (t, cls = "", i = 0) => `<span class="pl-chip ${cls}" style="--i:${i}">${t}</span>`;
-
-  const STAGE_VIEW = [
-    (d) => `<div class="pl-sentences">${d.sentences.map((s) => `
-        <div class="pl-sent"><span class="pl-badge">Sentence ${s.index}</span>
-          <div class="pl-chips">${d.tokens.filter((t) => t.sent === s.index - 1).map((t, i) => chip(`${esc(t.text)}<sub>${t.start}</sub>`, "", i)).join("")}</div>
-        </div>`).join("")}</div>
-      <p class="pl-note">Small numbers show where each token starts in the original text.</p>`,
-    (d) => d.changes.length
-      ? `<div class="pl-changes">${d.changes.map((c, i) => `<div class="pl-change" style="--i:${i}"><span class="from">${esc(c.text)}</span><span class="arrow">→</span><span class="to">${esc(c.norm)}</span></div>`).join("")}</div>
-         <p class="pl-note">${d.changes.length} word${d.changes.length > 1 ? "s were" : " was"} rewritten. The highlights still point at what was typed.</p>`
-      : `<p class="pl-empty">No spelling fixes were needed in this text.</p><p class="pl-note">Try a text with a slip such as <em>fevar</em> or <em>dont</em> to see this stage work.</p>`,
-    (d) => spanHtml(d.text, d.symptoms.flatMap((s) => s.evidence.map((e) => ({ start: e.start, end: e.end, label: "symptom", title: s.name })))) +
-      (d.symptoms.length ? `<div class="pl-list">${d.symptoms.map((s, i) => `<div class="pl-row" style="--i:${i}"><b>${esc(cap(s.name))}</b><span class="pl-tag">${esc(METHOD[s.method] || s.method)}</span><span class="pl-conf"><i style="width:${Math.round(s.confidence * 100)}%"></i></span><small>${Math.round(s.confidence * 100)}%</small></div>`).join("")}</div>` : '<p class="pl-empty">No symptoms were found in this text.</p>'),
-    (d) => `<div class="pl-clauses">${d.clauses.map((c, i) => `<div class="pl-clause" style="--i:${i}"><span class="pl-badge">S${c.sentence} · C${c.clause}</span>${esc(c.text)}</div>`).join("")}</div>`,
-    (d) => spanHtml(d.text, d.symptoms.flatMap((s) => s.evidence.map((e) => ({ start: e.start, end: e.end, label: s.subject === "patient" ? STATUS_HL[s.status] : "other", title: STATUS_NAME[s.status] })))) +
-      (d.symptoms.length ? `<div class="pl-list">${d.symptoms.map((s, i) => `<div class="pl-row" style="--i:${i}"><b>${esc(cap(s.name))}</b><span class="pl-tag st-${s.status}">${esc(STATUS_NAME[s.status])}${s.subject !== "patient" ? " · " + esc(s.subject) : ""}</span><small>${esc(s.reason || (s.status === "present" ? "no negation or hedge nearby" : ""))}</small></div>`).join("")}</div>` : '<p class="pl-empty">Nothing to classify.</p>'),
-    (d) => {
-      const seen = new Set(), uniq = d.details.filter((x) => { const k = x.start + ":" + x.end + x.kind; return seen.has(k) ? false : seen.add(k); });
-      return spanHtml(d.text, uniq.map((x) => ({ start: x.start, end: x.end, label: KIND_HL[x.kind], title: KIND_LABEL[x.kind] }))) +
-        (uniq.length ? `<div class="pl-chips">${uniq.map((x, i) => chip(`<em>${esc(KIND_LABEL[x.kind])}</em> ${esc(x.text)}`, "k-" + x.kind, i)).join("")}</div>` : '<p class="pl-empty">No durations, severity words or other details were found.</p>');
-    },
-    (d) => `<div class="pl-links">${d.symptoms.map((s, i) => `<div class="pl-link" style="--i:${i}"><div class="pl-link-head"><b>${esc(cap(s.name))}</b><span class="pl-tag st-${s.status}">${esc(STATUS_NAME[s.status])}</span></div>${s.details.length ? `<div class="pl-chips">${s.details.map((x, j) => chip(`<em>${esc(KIND_LABEL[x.kind])}</em> ${esc(x.text)}`, "k-" + x.kind, j)).join("")}</div>` : '<small class="muted">no details attached</small>'}</div>`).join("") || '<p class="pl-empty">No symptoms to link.</p>'}</div>` +
-      (d.unlinked.length ? `<p class="pl-note">Could not be linked to any symptom: ${d.unlinked.map((u) => `“${esc(u.text)}” (${esc(u.kind)})`).join(", ")}</p>` : ""),
-    (d) => {
-      const [title] = LEVELS[d.attention_level] || LEVELS.routine;
-      return `<div class="pl-verdict lvl-${esc(d.attention_level)}"><span>⚑</span><b>${esc(title)}</b></div>
-        <h4 class="pl-sub">Red flags</h4>${d.red_flags.length ? d.red_flags.map((f) => `<p class="pl-flag"><b>${esc(f.title)}</b> <small>${esc(LEVELS[f.level][0])}</small><br>${esc(f.advice)}</p>`).join("") : '<p class="pl-empty">No red flags found.</p>'}
-        <h4 class="pl-sub">Note for the doctor</h4><p class="pl-summary">${esc(d.summary)}</p>
-        ${d.follow_up_questions.length ? `<h4 class="pl-sub">Questions to ask next</h4><ul class="pl-questions">${d.follow_up_questions.slice(0, 4).map((q) => `<li>${esc(q)}</li>`).join("")}</ul>` : ""}`;
-    },
-  ];
-
-  function stageSummary(i, d) {
-    return [
-      `${d.token_count} tokens in ${d.sentences.length} sentence${d.sentences.length > 1 ? "s" : ""}`,
-      d.changes.length ? `${d.changes.length} word${d.changes.length > 1 ? "s" : ""} normalised` : "nothing needed fixing",
-      `${d.symptoms.length} symptom${d.symptoms.length !== 1 ? "s" : ""} found`,
-      `${d.clauses.length} clause${d.clauses.length !== 1 ? "s" : ""}`,
-      `${d.symptoms.filter((s) => s.status === "absent" || s.status === "resolved").length} denied, ${d.symptoms.filter((s) => s.status === "present").length} present`,
-      `${new Set(d.details.map((x) => x.start + ":" + x.end)).size} detail${d.details.length !== 1 ? "s" : ""} found`,
-      `${d.details.length} link${d.details.length !== 1 ? "s" : ""} made`,
-      `${d.red_flags.length} red flag${d.red_flags.length !== 1 ? "s" : ""}, note written`,
-    ][i];
-  }
-
-  function showStage(i) {
-    const d = pl.data;
-    if (!d) return;
-    pl.step = Math.max(0, Math.min(STAGES.length - 1, i));
-    const st = STAGES[pl.step];
-    $("#pl-steps").innerHTML = STAGES.map((s, k) => `<li><button type="button" class="${k === pl.step ? "active" : k < pl.step ? "done" : ""}" data-k="${k}" aria-label="Stage ${k + 1}: ${esc(s.title)}"><i>${k < pl.step ? "✓" : k + 1}</i><span>${esc(s.title)}</span></button></li>`).join("");
-    $("#pl-card").innerHTML = `<div class="pl-head"><span class="pl-num">Step ${pl.step + 1} of ${STAGES.length}</span><span class="pl-concept">${esc(st.concept)}</span></div>
-      <h3>${esc(st.title)}</h3><p class="pl-what">${esc(st.what)}</p>
-      <div class="pl-visual" key="${pl.step}">${STAGE_VIEW[pl.step](d)}</div>
-      <p class="pl-result">→ ${esc(stageSummary(pl.step, d))}</p>
-      ${pl.auto && pl.step < STAGES.length - 1 ? `<div class="pl-progress" aria-hidden="true"><i style="animation-duration:${AUTO_MS}ms"></i></div>` : ""}`;
-    $("#pl-prev").disabled = pl.step === 0;
-    $("#pl-next").textContent = pl.step === STAGES.length - 1 ? "Start over ↺" : "Next step →";
-    $("#pl-hint").textContent = pl.auto
-      ? (pl.step < STAGES.length - 1 ? "Playing automatically. Click a stage, or press ← or → to take over." : "")
-      : "Use the buttons, click a stage, or press ← and → to move between stages.";
-    clearTimeout(pl.timer);
-    pl.timer = null;
-    if (pl.auto && pl.step < STAGES.length - 1) pl.timer = setTimeout(() => showStage(pl.step + 1), AUTO_MS);
-    else if (pl.auto) pl.auto = false;
-  }
-
-  function stopAuto() {
-    pl.auto = false;
-    clearTimeout(pl.timer);
-    pl.timer = null;
-  }
-
-  async function runPipeline() {
-    const text = $("#pl-text").value.trim(), err = $("#pl-error");
-    err.innerHTML = "";
-    if (!text) { err.innerHTML = '<div class="error" role="alert"><strong>Please write a few words about the symptoms first.</strong></div>'; return; }
-    const btn = $("#pl-run");
-    btn.disabled = true;
-    btn.textContent = "Running…";
-    try {
-      const res = await fetch("/api/pipeline", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text }) });
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error || "Something went wrong.");
-      stopAuto();
-      pl.data = d;
-      $("#pl-stage").hidden = false;
-      pl.auto = true;                 // plays through the stages by itself
-      showStage(0);
-    } catch (e) {
-      err.innerHTML = `<div class="error" role="alert"><strong>Could not run the pipeline.</strong> ${esc(e.message)}</div>`;
-    } finally {
-      btn.disabled = false;
-      btn.textContent = "Run pipeline";
-    }
-  }
-
-  function bindPipeline() {
-    $("#pl-run").addEventListener("click", runPipeline);
-    $("#pl-sample").addEventListener("click", () => { $("#pl-text").value = "Headace and fevar since sunday, no cough. I took paracetamol but the headache gets worse after eating."; runPipeline(); });
-    $("#pl-use").addEventListener("click", () => { $("#pl-text").value = textEl.value; if (textEl.value.trim()) runPipeline(); });
-    $("#pl-prev").addEventListener("click", () => { stopAuto(); showStage(pl.step - 1); });
-    $("#pl-next").addEventListener("click", () => {
-      stopAuto();
-      if (pl.step === STAGES.length - 1) { pl.auto = true; showStage(0); }   // "Start over" plays again
-      else showStage(pl.step + 1);
-    });
-    $("#pl-steps").addEventListener("click", (e) => { const b = e.target.closest("button[data-k]"); if (b) { stopAuto(); showStage(+b.dataset.k); } });
-    document.addEventListener("keydown", (e) => {
-      if ($("#view-pipeline").hidden || !pl.data || /^(TEXTAREA|INPUT|SELECT)$/.test(document.activeElement.tagName)) return;
-      if (e.key === "ArrowRight") { stopAuto(); showStage(pl.step + 1); }
-      if (e.key === "ArrowLeft") { stopAuto(); showStage(pl.step - 1); }
-    });
-    window.addEventListener("hashchange", () => { if (location.hash !== "#pipeline") stopAuto(); });
   }
 
   /* ------------------------------------------------------------ live consultation */
@@ -933,70 +759,6 @@
     window.addEventListener("hashchange", () => { if (location.hash !== "#live") { lvStopMic(); lvStopDemo(); } });   // never keep recording in the background
   }
 
-  /* ------------------------------------------------------------ compare visits */
-  const CMP_SAMPLE = {
-    before: "I have had fever and cough for 3 days, and a severe headache. No sore throat.",
-    after: "The fever is gone. Cough is still there but mild and getting better. I have a new sore throat since yesterday. Headache is worse.",
-  };
-
-  function chips(items) {
-    return items.map((t) => `<span class="pill">${esc(t)}</span>`).join("");
-  }
-
-  function renderCompare(d) {
-    const group = (title, cls, rows) => rows.length
-      ? `<div class="cmp-group ${cls}"><h3>${esc(title)} <span class="cmp-n">${rows.length}</span></h3>${rows.join("")}</div>`
-      : "";
-    const row = (name, tag, tagCls, lines) =>
-      `<div class="cmp-row"><div class="cmp-name">${esc(cap(name))}<span class="tag ${tagCls}">${esc(tag)}</span></div>${lines.filter(Boolean).map((l) => `<p>${esc(l)}</p>`).join("")}</div>`;
-    const dirLabel = { worse: "Worse", better: "Better", changed: "Changed", unchanged: "Unchanged" };
-    const newRows = d.new.map((n) => row(n.name, "New", "t-new", [n.note ? `Was ${n.note} at the earlier visit.` : "Not mentioned at the earlier visit.", n.after.duration && `Since: ${n.after.duration}`, n.after.severity && `Severity: ${n.after.severity}`]));
-    const contRows = d.continuing.map((c) => row(c.name, dirLabel[c.direction], "t-" + c.direction, c.changes.length ? c.changes : ["No change in the details given."]));
-    const goneRows = d.resolved.map((r) => row(r.name, "Resolved or denied", "t-better", [`Now stated as ${r.after.status === "absent" ? "not present" : r.after.status}.`])).concat(
-      d.not_mentioned.map((r) => row(r.name, "Not mentioned now", "t-unchanged", ["Present at the earlier visit and not mentioned at this one. Worth asking about."])));
-    const flags = d.red_flags;
-    const flagHtml = (flags.new.length || flags.cleared.length || flags.ongoing.length)
-      ? `<div class="cmp-group"><h3>Red flags</h3>${flags.new.length ? `<p><b>New:</b> ${chips(flags.new)}</p>` : ""}${flags.ongoing.length ? `<p><b>Still present:</b> ${chips(flags.ongoing)}</p>` : ""}${flags.cleared.length ? `<p><b>Cleared:</b> ${chips(flags.cleared)}</p>` : ""}</div>`
-      : "";
-    $("#cmp-out").innerHTML = `
-      <div class="cmp-summary"><span>Summary</span>${esc(d.summary)}</div>
-      ${group("New symptoms", "g-new", newRows)}
-      ${group("Continuing symptoms", "g-cont", contRows)}
-      ${group("No longer present", "g-gone", goneRows)}
-      ${flagHtml}
-      <div class="cmp-sides">
-        <div><h4>Earlier visit</h4><p>${esc(d.before.summary)}</p></div>
-        <div><h4>Latest visit</h4><p>${esc(d.after.summary)}</p></div>
-      </div>`;
-  }
-
-  function bindCompare() {
-    const b = $("#cmp-before"), a = $("#cmp-after"), out = $("#cmp-out");
-    async function run() {
-      if (!b.value.trim() || !a.value.trim()) {
-        out.innerHTML = '<div class="error" role="alert"><strong>Please fill in both visits.</strong></div>';
-        return;
-      }
-      const btn = $("#cmp-run");
-      btn.disabled = true;
-      btn.textContent = "Comparing…";
-      try {
-        const res = await fetch("/api/compare", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ before: b.value, after: a.value }) });
-        const d = await res.json();
-        if (!res.ok) throw new Error(d.error || "Something went wrong.");
-        renderCompare(d);
-      } catch (err) {
-        out.innerHTML = `<div class="error" role="alert"><strong>Could not compare.</strong> ${esc(err.message)}</div>`;
-      } finally {
-        btn.disabled = false;
-        btn.textContent = "Compare visits";
-      }
-    }
-    $("#cmp-run").addEventListener("click", run);
-    $("#cmp-sample").addEventListener("click", () => { b.value = CMP_SAMPLE.before; a.value = CMP_SAMPLE.after; run(); });
-    $("#cmp-clear").addEventListener("click", () => { b.value = ""; a.value = ""; out.innerHTML = ""; b.focus(); });
-  }
-
   /* ------------------------------------------------------------ init */
   async function init() {
     document.querySelectorAll("a[data-view]").forEach((a) => a.addEventListener("click", () => {
@@ -1048,8 +810,6 @@
     bindBlobs();
     bindTheme();
     bindReportDialog();
-    bindCompare();
-    bindPipeline();
     bindLive();
     bindWelcome();
     bindSpotlight();

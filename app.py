@@ -9,8 +9,6 @@ from flask import Flask, Response, jsonify, render_template, request
 
 from nlp import analyze
 import dataset
-from pipeline import build_pipeline
-from compare import compare_visits
 from report import build_report_pdf, clean_details
 
 MAX_CHARS = 5000
@@ -67,30 +65,6 @@ def create_app() -> Flask:
         if len(text) > MAX_CHARS:
             return jsonify({"error": f"Please keep the text under {MAX_CHARS} characters."}), 413
         return jsonify(analyze(text))
-
-    @app.post("/api/pipeline")
-    def pipeline():
-        payload = request.get_json(silent=True)
-        if not isinstance(payload, dict) or not isinstance(payload.get("text"), str) or not payload["text"].strip():
-            return jsonify({"error": "Please write a few words about the symptoms first."}), 400
-        if len(payload["text"].strip()) > MAX_CHARS:
-            return jsonify({"error": f"Please keep the text under {MAX_CHARS} characters."}), 413
-        return jsonify(build_pipeline(payload["text"].strip()))
-
-    @app.post("/api/compare")
-    def compare():
-        payload = request.get_json(silent=True)
-        if not isinstance(payload, dict):
-            return jsonify({"error": "Send JSON like {\"before\": \"...\", \"after\": \"...\"}."}), 400
-        texts = []
-        for key, label in (("before", "earlier visit"), ("after", "latest visit")):
-            v = payload.get(key)
-            if not isinstance(v, str) or not v.strip():
-                return jsonify({"error": f"Please write the description for the {label}."}), 400
-            if len(v.strip()) > MAX_CHARS:
-                return jsonify({"error": f"Please keep each text under {MAX_CHARS} characters."}), 413
-            texts.append(v.strip())
-        return jsonify(compare_visits(*texts))
 
     @app.post("/api/report")
     def report():

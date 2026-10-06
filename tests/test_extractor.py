@@ -326,6 +326,35 @@ class DevanagariSupport(unittest.TestCase):
         self.assertEqual(analyze("mujhe bukhar hai aur sar dard hai")["language"]["code"], "hi-Latn")
 
 
+class AgeAndVitals(unittest.TestCase):
+    def ids(self, text):
+        return {f["id"]: f for f in analyze(text)["red_flags"]}
+
+    def test_fever_flag_depends_on_age(self):
+        self.assertEqual(self.ids("My 2 month old baby has fever.")["AG1"]["level"], "emergency")
+        self.assertEqual(self.ids("My 8 month old baby has fever.")["AG1"]["level"], "urgent")
+        self.assertIn("AG3", self.ids("I am a 72 year old man with fever."))
+        self.assertNotIn("AG1", self.ids("I am a 30 year old man with fever."))
+        self.assertNotIn("AG3", self.ids("I am a 30 year old man with fever."))
+
+    def test_pregnancy_rules(self):
+        self.assertEqual(self.ids("I am pregnant and I have bleeding.")["AG6"]["level"], "emergency")
+
+    def test_vitals_and_flags(self):
+        a = analyze("BP 150/95, pulse 112, SpO2 91%, weight 70 kg. I have cough.")
+        v = {x["kind"]: x for x in a["vitals"]}
+        self.assertEqual((v["bp"]["value"], v["bp"]["status"]), ("150/95", "high"))
+        self.assertEqual(v["pulse"]["status"], "high")
+        self.assertEqual(v["spo2"]["status"], "low")
+        self.assertEqual(v["weight"]["status"], "normal")
+        self.assertIn("V-spo2", {f["id"] for f in a["red_flags"]})
+
+    def test_normal_vitals_and_pain_scale_not_bp(self):
+        a = analyze("Blood pressure is 120/80 and heart rate 72 bpm. Pain 7/10.")
+        self.assertEqual({x["kind"]: x["status"] for x in a["vitals"]}, {"bp": "normal", "pulse": "normal"})
+        self.assertFalse(a["red_flags"] and any(f["id"].startswith("V-") for f in a["red_flags"]))
+
+
 class MixedLanguage(unittest.TestCase):
     def test_mixed_sentence_is_understood_and_labelled(self):
         a = analyze("mujhe fever hai aur पेट में दर्द")
@@ -338,22 +367,6 @@ class MixedLanguage(unittest.TestCase):
         self.assertEqual(r, {("fever", "absent"), ("headache", "present")})
         r = {(s["name"], s["status"]) for s in analyze("I have बुखार for 3 दिन and no cough")["symptoms"]}
         self.assertEqual(r, {("fever", "present"), ("cough", "absent")})
-
-
-class CompareVisits(unittest.TestCase):
-    def test_new_resolved_and_changed(self):
-        from compare import compare_visits
-        d = compare_visits("I have fever and cough for 3 days, severe headache. No sore throat.",
-                           "Fever is gone. Cough is still there but mild and getting better. New sore throat since yesterday. Headache is worse.")
-        self.assertEqual([n["name"] for n in d["new"]], ["sore throat"])
-        self.assertEqual([r["name"] for r in d["resolved"]], ["fever"])
-        dirs = {c["name"]: c["direction"] for c in d["continuing"]}
-        self.assertEqual(dirs, {"headache": "worse", "cough": "better"})
-
-    def test_not_mentioned_now(self):
-        from compare import compare_visits
-        d = compare_visits("I have fever and cough.", "I have a cough.")
-        self.assertEqual([g["name"] for g in d["not_mentioned"]], ["fever"])
 
 
 class WebApi(unittest.TestCase):
@@ -384,26 +397,11 @@ class WebApi(unittest.TestCase):
             self.assertEqual(r.status_code, 200)
             self.assertTrue(r.get_json()["symptoms"], ex["label"])
 
-    def test_compare_endpoint(self):
-        r = self.client.post("/api/compare", json={"before": "I have fever.", "after": "I have a cough."})
-        self.assertEqual(r.status_code, 200)
-        self.assertIn("summary", r.get_json())
-        self.assertEqual(self.client.post("/api/compare", json={"before": "x", "after": " "}).status_code, 400)
-
     def test_report_pdf_with_details(self):
         r = self.client.post("/api/report", json={"text": "मुझे बुखार है", "details": {"name": "Asha", "age": "34", "date": "2026-10-06", "doctor": "Dr Rao"}})
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.mimetype, "application/pdf")
         self.assertTrue(r.data.startswith(b"%PDF"))
-
-    def test_pipeline_endpoint(self):
-        r = self.client.post("/api/pipeline", json={"text": "Headace and fevar since sunday, no cough."})
-        self.assertEqual(r.status_code, 200)
-        d = r.get_json()
-        self.assertEqual([c["norm"] for c in d["changes"]], ["fever"])
-        self.assertEqual({s["name"]: s["status"] for s in d["symptoms"]}, {"headache": "present", "fever": "present", "cough": "absent"})
-        self.assertTrue(d["details"])
-        self.assertEqual(self.client.post("/api/pipeline", json={"text": " "}).status_code, 400)
 
     def test_dataset_endpoints(self):
         r = self.client.get("/api/dataset")

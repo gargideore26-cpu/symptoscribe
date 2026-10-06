@@ -46,13 +46,24 @@ def _analysed() -> list:
     return [(r, analyze(r["text"])) for r in load()]
 
 
+def _title(a: dict) -> str:
+    """Plain title from the first symptoms the engine finds, e.g. "Headache, nausea and vomiting"."""
+    names = []
+    for s in _found(a):
+        if s["name"] not in names:
+            names.append(s["name"])
+    names = names[:3]
+    t = names[0] if len(names) == 1 else ", ".join(names[:-1]) + " and " + names[-1]
+    return t[:1].upper() + t[1:]
+
+
 def examples() -> list:
     """One fixed, readable case from each of a few categories (the category is not shown to users)."""
     out = []
-    for n, label in enumerate(EXAMPLE_DISEASES, 1):
+    for label in EXAMPLE_DISEASES:
         for r, a in _analysed():
             if r["label"] == label and len(_found(a)) >= 2:
-                out.append({"label": f"Case {n}", "text": r["text"], "id": r["id"]})
+                out.append({"label": _title(a), "text": r["text"], "id": r["id"]})
                 break
     return out
 

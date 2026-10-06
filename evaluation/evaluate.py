@@ -138,8 +138,8 @@ def score_case(case: dict, ref: dt.date) -> dict:
 
 
 # ------------------------------------------------------------------ aggregate
-def run_evaluation() -> dict:
-    gold = json.loads(GOLD_PATH.read_text())
+def run_evaluation(gold_path=None) -> dict:
+    gold = json.loads(pathlib.Path(gold_path or GOLD_PATH).read_text())
     ref = dt.date.fromisoformat(gold["ref_date"])
     sets = {}
     slot_totals = {s: [0, 0, 0] for s in SLOTS}
@@ -176,7 +176,8 @@ def run_evaluation() -> dict:
 
 
 def main(argv) -> None:
-    res = run_evaluation()
+    gold_path = argv[argv.index("--gold") + 1] if "--gold" in argv else None   # e.g. --gold gold_annotated.json
+    res = run_evaluation(gold_path)
     d = res["dataset"]
     print(f"{d['cases']} texts, {d['symptom_annotations']} symptom annotations\n")
 
