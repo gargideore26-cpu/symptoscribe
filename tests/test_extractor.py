@@ -440,44 +440,43 @@ class WebApi(unittest.TestCase):
 
 
 
-class QueueAndIntake(unittest.TestCase):
+class ReplyAndDashboard(unittest.TestCase):
     def setUp(self):
         import os, tempfile
         self.tmp = tempfile.TemporaryDirectory()
-        os.environ["INTAKE_FILE"] = os.path.join(self.tmp.name, "intake.json")
-        from app import create_app
-        self.client = create_app().test_client()
+        os.environ["STATS_FILE"] = os.path.join(self.tmp.name, "stats.json")
+        import app as app_module
+        app_module._last_recorded.clear()
+        self.client = app_module.create_app().test_client()
 
     def tearDown(self):
         import os
-        os.environ.pop("INTAKE_FILE", None)
+        os.environ.pop("STATS_FILE", None)
         self.tmp.cleanup()
 
-    def test_triage_orders_by_urgency(self):
-        r = self.client.post("/api/triage", json={"patients": [
-            {"name": "A", "text": "mild cold since 2 days"},
-            {"name": "B", "text": "severe chest pain and breathlessness since morning"}]})
-        d = r.get_json()
-        self.assertEqual([p["name"] for p in d], ["B", "A"])
-        self.assertEqual(d[0]["rank"], 1)
-        self.assertEqual(self.client.post("/api/triage", json={"patients": [{"text": " "}]}).status_code, 400)
+    def test_reply_in_three_languages(self):
+        for lang, word in (("en", "fever"), ("hi", "बुखार"), ("mr", "ताप")):
+            r = self.client.post("/api/reply", json={"text": "fever for 3 days, no cough", "lang": lang})
+            self.assertEqual(r.status_code, 200)
+            self.assertIn(word, r.get_json()["message"])
 
-    def test_intake_round_trip(self):
-        tok = self.client.post("/api/intake", json={"label": "Asha"}).get_json()["token"]
-        self.assertEqual(self.client.get(f"/p/{tok}").status_code, 200)
-        self.assertFalse(self.client.get("/api/intake").get_json()["items"][0]["submitted"])
-        r = self.client.post(f"/api/intake/{tok}/submit", json={"name": "Asha", "text": "fever for 3 days, no cough"})
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(self.client.post(f"/api/intake/{tok}/submit", json={"text": "again"}).status_code, 409)
-        item = self.client.get("/api/intake").get_json()["items"][0]
-        self.assertTrue(item["submitted"])
-        self.assertIn("fever", item["symptoms"])
-        self.assertEqual(self.client.delete(f"/api/intake/{tok}").status_code, 200)
-        self.assertEqual(self.client.get("/api/intake").get_json()["items"], [])
+    def test_reply_advice_follows_urgency(self):
+        m = self.client.post("/api/reply", json={"text": "severe chest pain and breathlessness since morning", "lang": "en"}).get_json()["message"]
+        self.assertIn("nearest hospital", m)
+        self.assertEqual(self.client.post("/api/reply", json={"text": "fever", "lang": "fr"}).status_code, 400)
+        self.assertEqual(self.client.post("/api/reply", json={"text": " "}).status_code, 400)
 
-    def test_bad_token(self):
-        self.assertEqual(self.client.get("/p/nope").status_code, 404)
-        self.assertEqual(self.client.post("/api/intake/nope/submit", json={"text": "fever"}).status_code, 404)
+    def test_stats_only_when_recorded_and_once(self):
+        post = lambda body: self.client.post("/api/analyze", json=body)
+        post({"text": "fever and cough for 2 days"})
+        self.assertEqual(self.client.get("/api/stats").get_json()["total"], 0)
+        post({"text": "fever and cough for 2 days", "record": True})
+        post({"text": "fever and cough for 2 days", "record": True})
+        d = self.client.get("/api/stats").get_json()
+        self.assertEqual(d["total"], 1)
+        self.assertEqual({s["name"] for s in d["top_symptoms"]}, {"fever", "cough"})
+        import json
+        self.assertNotIn("cough for 2 days", json.dumps(d))   # never the patient's words
 
 
 if __name__ == "__main__":

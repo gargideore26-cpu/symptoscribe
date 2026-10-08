@@ -31,11 +31,8 @@
     <nav aria-label="Sections" id="nav">
       <a href="#home" data-view="home">Home</a>
       <a href="#analyzer" data-view="analyzer">Analyzer</a>
-      <a href="#live" data-view="live">Live</a>
-      <a href="#queue" data-view="queue">Queue</a>
-      <a href="#intake" data-view="intake">Intake</a>
-      <a class="nav-sub nav-first" href="#about" data-view="about">Safety</a>
-      <a class="nav-sub" href="#evaluation" data-view="evaluation">For reviewers</a>
+      <a href="#dashboard" data-view="dashboard">Insights</a>
+      <a class="nav-sub nav-first" href="#evaluation" data-view="evaluation">How does it work</a>
     </nav>
     <div class="top-right">
       <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Switch to light theme" title="Toggle light / dark">
@@ -124,128 +121,40 @@
 
     </section>
 
-    <!-- ====================================================== LIVE CONSULTATION -->
-    <section id="view-live" class="view" hidden>
+    <!-- ====================================================== DASHBOARD -->
+    <section id="view-dashboard" class="view" hidden>
       <div class="window">
-        <div class="win-bar"><i></i><i></i><i></i><span>SymptoScribe · Live consultation</span></div>
-        <h2 class="section-title">Live consultation</h2>
-        <p class="lede">Leave the microphone on while the patient speaks. Symptoms appear as each sentence finishes, and the note writes itself. English, Hinglish, हिन्दी, मराठी and mixes of them all work.</p>
-        <div class="lv-controls">
-          <button id="lv-start" class="btn primary" type="button"><span class="lv-dot" aria-hidden="true"></span><span id="lv-start-label">Start listening</span></button>
-          <button id="lv-demo" class="btn" type="button">▶ Demo conversation</button>
-          <button id="lv-clear" class="btn" type="button">Clear</button>
-          <label class="opt">Language
-            <select id="lv-lang" class="mic-lang"><option value="en-IN">English</option><option value="hi-IN">हिन्दी</option><option value="mr-IN">मराठी</option></select>
-          </label>
-          <span id="lv-status" class="lv-status" aria-live="polite">Ready</span>
-        </div>
-        <div class="lv-grid">
-          <div class="lv-left">
-            <div class="lv-label">Conversation</div>
-            <div id="lv-transcript" class="lv-transcript" aria-live="polite"><span class="lv-placeholder">What the patient says appears here, sentence by sentence.</span></div>
-            <form id="lv-form" class="lv-type" autocomplete="off">
-              <input id="lv-type" type="text" maxlength="500" placeholder="No microphone? Type a sentence and press Enter">
-              <button class="btn small" type="submit">Add</button>
-            </form>
-          </div>
-          <div class="lv-right" id="lv-out" aria-live="polite">
-            <div class="empty"><p>The live note appears here.</p></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ====================================================== TRIAGE QUEUE -->
-    <section id="view-queue" class="view" hidden>
-      <div class="window">
-        <div class="win-bar"><i></i><i></i><i></i><span>SymptoScribe · Queue</span></div>
-        <h2 class="section-title">Triage queue</h2>
-        <p class="lede">Add the patients waiting, one description each. We read all of them and put the most urgent first.</p>
-        <div id="q-rows" class="q-rows"></div>
-        <div class="actions q-actions">
-          <button id="q-sort" class="btn primary" type="button">Sort by urgency</button>
-          <button id="q-add" class="btn" type="button">Add patient</button>
-          <button id="q-sample" class="btn" type="button">Load a sample queue</button>
-          <button id="q-inbox" class="btn" type="button">Add received intake forms</button>
-          <button id="q-clear" class="btn" type="button">Clear</button>
-        </div>
-        <div id="q-out" aria-live="polite"></div>
-      </div>
-    </section>
-
-    <!-- ====================================================== PATIENT INTAKE -->
-    <section id="view-intake" class="view" hidden>
-      <div class="window">
-        <div class="win-bar"><i></i><i></i><i></i><span>SymptoScribe · Patient intake</span></div>
-        <h2 class="section-title">Patient intake</h2>
-        <p class="lede">Make a link and send it to the patient. They write or speak how they feel at home, and the note is ready here before the appointment.</p>
-        <div class="in-make">
-          <label class="field-label" for="in-label">Patient name or note (optional)</label>
-          <div class="in-make-row">
-            <input id="in-label" type="text" maxlength="60" placeholder="For example: Asha, Tuesday 4 pm" autocomplete="off">
-            <button id="in-create" class="btn primary" type="button">Create patient link</button>
-          </div>
-          <p id="in-hint" class="muted in-hint"></p>
-        </div>
-        <div class="in-head"><h3>Forms</h3><button id="in-refresh" class="btn small" type="button">Refresh</button></div>
-        <div id="in-list" aria-live="polite"></div>
-        <p class="muted in-note">There is no login in this prototype: anyone who can open this site can read the forms. Patient text is saved on this computer until you delete it.</p>
+        <div class="win-bar"><i></i><i></i><i></i><span>SymptoScribe · Insights</span></div>
+        <h2 class="section-title">Insights</h2>
+        <p class="lede">A summary of the notes analysed here.</p>
+        <div id="db-out" aria-live="polite"></div>
       </div>
     </section>
 
     <section id="view-evaluation" class="view prose" hidden>
-      <div class="page-head"><span class="badge">✦ Evaluation</span>
-      <h1>How well does it work?</h1>
-      <p class="lede">The engine is run over a public dataset of 1,200 patient symptom descriptions. This page shows what it found. A small hand-marked set is kept only to check accuracy.</p></div>
-      <div id="dataset-body"><p class="muted">Reading the dataset…</p></div>
-      <details class="card accuracy">
-        <summary>Accuracy check on a small hand-marked set (91 texts)</summary>
-        <p class="muted acc-note">The public dataset has no marked answers for duration or severity, so accuracy scores come from this small set. Precision is how many of its answers were right, recall is how many of the true answers it found, and F1 balances both.</p>
-        <div id="eval-body"><p class="muted">Loading the evaluation…</p></div>
-      </details>
+      <div class="page-head"><span class="badge">✦ How it works</span>
+      <h1>How does it work?</h1>
+      <p class="lede">SymptoScribe reads what the patient wrote using simple, explainable rules. It never names a disease.</p></div>
+
+      <ol class="steps">
+        <li><h2>Clean the text</h2><p>The text is split into sentences and words, common spelling slips are fixed, and Hindi and Marathi words are matched to the same vocabulary as English.</p></li>
+        <li><h2>Find the symptoms</h2><p>Words and phrases are matched against a list of 40 symptoms written in English, Hinglish, Hindi and Marathi.</p></li>
+        <li><h2>Decide the status</h2><p>Negation rules tell whether each symptom is present, denied ("no fever"), unsure, from the past, or about someone else.</p></li>
+        <li><h2>Attach the details</h2><p>Since when, how severe, getting better or worse, where it hurts, and what triggers it. Vital signs such as blood pressure and pulse are read too.</p></li>
+        <li><h2>Check for red flags</h2><p>Simple rules, including age and pregnancy, raise a warning with advice when something should not wait.</p></li>
+        <li><h2>Write the note</h2><p>A template turns everything into the doctor's note, the "still to ask" checklist and a draft reply to the patient.</p></li>
+      </ol>
+
+      <div class="card">
+        <h2 class="plain">Why rules, and how well they work</h2>
+        <p>Every result can be traced to the words it came from, nothing needs training data, and the same text always gives the same answer.</p>
+        <p id="accuracy-line" class="muted"></p>
+        <p class="muted">Example texts come from the public <a href="https://www.kaggle.com/datasets/niyarrbarman/symptom2disease" target="_blank" rel="noopener">Symptom2Disease</a> dataset on Kaggle.</p>
+      </div>
     </section>
 
     <!-- ====================================================== LIMITS -->
-    <section id="view-about" class="view prose" hidden>
-      <div class="page-head"><span class="badge">⚑ Limits and ethics</span>
-      <h1>Limits and ethics</h1>
-      <p class="lede">SymptoScribe organises what a patient wrote. It does not diagnose, prescribe or replace a doctor.</p></div>
-
-      <div class="card"><h2 class="plain">What it cannot do</h2>
-      <ul class="plain-list">
-        <li>It does not suggest causes or treatments. The red flags and the Queue order are coarse rules for attention, not clinical triage. The doctor decides.</li>
-        <li>It understands English, Hinglish (Hindi in English letters), and Hindi and Marathi in Devanagari script, including sentences that mix them. Its Hindi and Marathi word list is small, so a phrase it does not know can be missed. Other languages are not supported.</li>
-        <li>Age rules, vital-sign ranges and the "Still to ask" checklist are general adult and child rules written for this project. They are not a substitute for clinical guidelines or the doctor's own measurements.</li>
-        <li>Vital signs are read from what the patient typed or said. They are not measured, and a wrongly typed number gives a wrong result.</li>
-        <li>The PDF report cannot print Devanagari letters. For Hindi or Marathi text it lists the symptoms it recognised instead of the original words.</li>
-        <li>Speaking uses the browser's own speech recognition, which works in Chrome and Safari, needs internet, and can mishear Indian-language speech. Check the transcript.</li>
-        <li>Symptoms outside its lexicon are missed unless they match a <em>pain in &lt;body part&gt;</em> pattern. A missing symptom is not proof that nothing was said.</li>
-        <li>Unusual sentence structures can attach a detail to the wrong symptom. Always check the marked-up text.</li>
-      </ul></div>
-
-      <div class="card"><h2 class="plain">Data</h2>
-        <p>The example cases and the coverage report on the Evaluation page use the public <a href="https://www.kaggle.com/datasets/niyarrbarman/symptom2disease" target="_blank" rel="noopener">Symptom2Disease</a> dataset from Kaggle (1,200 patient-style symptom descriptions). Its disease labels are never used or shown to patients: SymptoScribe organises symptoms and does not predict diseases.</p></div>
-      <div class="card"><h2 class="plain">Privacy</h2>
-      <p>The Analyzer, Live and Queue pages read the text in memory and do not store it. Voice dictation is processed by the browser's speech service, not by SymptoScribe. The patient name, age, date and doctor typed into the report form are used for the PDF only and are never saved.</p>
-      <p>The one exception is <strong>Intake</strong>. A form a patient sends is saved on the computer running SymptoScribe until the doctor deletes it. There is no login yet, so anyone who can open the site can read these forms. Use it only on a computer and network you trust, and use made-up data when demonstrating the project.</p></div>
-
-      <div class="card"><h2 class="plain">If someone is in danger</h2>
-      <p>For chest pain, difficulty breathing, fainting, heavy bleeding or thoughts of self-harm, contact local emergency services right away. In India, Tele-MANAS offers free mental-health support on 14416 or 1-800-891-4416.</p></div>
-
-      <div class="card"><h2 class="plain">Future work</h2>
-      <ul class="plain-list">
-        <li>Train and compare a BioBERT or MuRIL token-classification model against this rule-based baseline.</li>
-        <li>Widen the Hindi and Marathi vocabulary using AI4Bharat resources, and add more languages.</li>
-        <li>Add doctor accounts, a login and HTTPS to Intake, with a proper database and a privacy review, before any real patient data is used.</li>
-        <li>Show the source guideline behind each red-flag rule.</li>
-        <li>Grow the annotated evaluation set with real, consented, anonymised examples.</li>
-      </ul></div>
-    </section>
   </main>
-
-  <footer class="site-foot">
-    <span>Decision support for doctors. Not a diagnosis.</span>
-  </footer>
 
   <dialog id="report-dialog" class="modal modal-form" aria-labelledby="report-title">
     <button class="modal-x" type="button" id="report-x" aria-label="Close">×</button>

@@ -31,7 +31,7 @@ python app.py                      # open http://127.0.0.1:5000
 Set `PORT=5001` if port 5000 is busy (macOS AirPlay uses it).
 
 ```bash
-python -m unittest discover -s tests -v      # 79 tests
+python -m unittest discover -s tests -v      # 83 tests
 python evaluation/evaluate.py --failures     # accuracy on the annotated texts
 ```
 
@@ -53,9 +53,11 @@ symptoscribe/
     └── evaluate.py         precision / recall / F1 and error list
 ```
 
-**Still to ask** checklist under each note (age, allergies, medicines, existing conditions, pregnancy status, vitals, and any symptom missing a duration or severity; ticked automatically when the patient already said it). **Queue** page (`/api/triage`) reads several patients and sorts them by urgency. **Intake** page: the doctor makes a link (`/p/<token>`), the patient writes or speaks their symptoms on their own device, and the note appears in the doctor's inbox. Forms are stored in `data/intake.json` (gitignored) and there is **no login**, so run it only on a trusted computer or network; start with `HOST=0.0.0.0` to let patients on the same Wi-Fi reach it.
+**Still to ask** checklist under each note (age, allergies, medicines, existing conditions, pregnancy status, vitals, and any symptom missing a duration or severity; ticked automatically when the patient already said it). 
 
-Extras: **age-aware red flags** (fever in a baby or an older adult, dehydration risk at the extremes of age, bleeding and other warning signs in pregnancy, each flag showing why it fired) and **vital signs** (BP, pulse, SpO2, breathing rate, blood sugar, weight, temperature) that are extracted, marked normal, low, high or critical, and can raise flags. **Live** page for consultations: the microphone stays on (Web Speech API, English, Hindi or Marathi), each finished sentence is analysed, and the note, symptom cards and red flags update as the patient talks; a typed fallback and a scripted demo are included. Sentences may **mix languages** (for example `mujhe fever hai aur पेट में दर्द`); the result shows a Mixed label with its parts. **Pipeline** page (`/api/pipeline`) steps through the eight stages on any text, with tokens, normalisation, symptoms, clauses, negation, details, links and the note. **Compare** page (`/api/compare`) diffs two visits (new, resolved, worse/better); the PDF report can carry typed-in patient name, age, date and doctor, which are never stored.
+**Reply to the patient** (Analyzer): drafts a short message in English, Hindi or Marathi from the note (what was found, advice by urgency, what is still to ask); the doctor edits it, and nothing is sent. The Hindi and Marathi wording should be checked by a native speaker. **Insights** page: counts over the notes analysed (common symptoms, urgency, language, red flags); only counts are kept in `data/stats.json`, never the patient's words, and it updates itself while the page is open.
+
+Extras: **age-aware red flags** (fever in a baby or an older adult, dehydration risk at the extremes of age, bleeding and other warning signs in pregnancy, each flag showing why it fired) and **vital signs** (BP, pulse, SpO2, breathing rate, blood sugar, weight, temperature) that are extracted, marked normal, low, high or critical, and can raise flags. Sentences may **mix languages** (for example `mujhe fever hai aur पेट में दर्द`); the result shows a Mixed label with its parts.  The PDF report can carry typed-in patient name, age, date and doctor, which are never stored.
 
 API: `POST /api/analyze` with `{"text": "..."}`, `GET /api/examples`, `GET /api/evaluation`, `GET /api/health`.
 
@@ -82,7 +84,7 @@ For clinical text, every decision should be explainable and fixable. Rules need 
 
 ## 4. Dataset and evaluation
 
-**Public dataset:** [Symptom2Disease](https://www.kaggle.com/datasets/niyarrbarman/symptom2disease) (Kaggle, niyarrbarman), 1,200 patient-style symptom descriptions in 24 categories. Put `Symptom2Disease.csv` in `data/` (or set `SYMPTO_DATASET` to its path). The website uses it for the example cases ("Case 1-5" and "Random case") and for the coverage report on the Evaluation page (`dataset.py`, `/api/dataset`). The dataset has only category labels, no marked symptoms, so the report shows **coverage** (about 88% of the texts have at least one symptom found), not accuracy. SymptoScribe never uses or predicts the disease labels.
+**Public dataset:** [Symptom2Disease](https://www.kaggle.com/datasets/niyarrbarman/symptom2disease) (Kaggle, niyarrbarman), 1,200 patient-style symptom descriptions in 24 categories. Put `Symptom2Disease.csv` in `data/` (or set `SYMPTO_DATASET` to its path). The website uses it for the example cases in the "Try an example" list (`dataset.py`). The dataset has only category labels, no marked symptoms, so it is used for **coverage** (about 88% of the texts have at least one symptom found; the `/api/dataset` endpoint reports it), not accuracy. SymptoScribe never uses or predicts the disease labels.
 
 **Accuracy check:** the numbers below come from a small hand-marked set, kept only because the public dataset cannot give accuracy scores.
 
@@ -126,5 +128,5 @@ Each of these is a good extension task.
 * **Not a diagnostic tool.** It organises what the patient wrote, and names no disease.
 * The red flags are coarse rules for attention, not clinical triage. They err on the side of caution.
 * A missing symptom does not mean the patient did not mention it. The marked-up text is there so that humans can check.
-* **Privacy:** the Analyzer, Live and Queue pages process text in memory and do not store it. The exception is **Intake**: a form a patient sends is saved on the computer running the app (`data/intake.json`, not pushed to GitHub) until the doctor deletes it, and there is no login, so anyone who can open the site can read it. Do not use real patient data, names or phone numbers in demos.
+* **Privacy:** the Analyzer page processes text in memory and does not store it. The Insights page keeps counts only (symptom names, urgency, language), never the text. Do not use real patient data, names or phone numbers in demos.
 * Self-harm language triggers a message with the Tele-MANAS number (14416 / 1-800-891-4416, India).

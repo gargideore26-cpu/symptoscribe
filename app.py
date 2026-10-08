@@ -3,18 +3,20 @@
 Run:  python app.py        then open http://127.0.0.1:5000
 """
 import os
-import socket
+import time
 from functools import lru_cache
 
 from flask import Flask, Response, jsonify, render_template, request
 
 from nlp import analyze
 import dataset
-import intake
-from triage import triage
+import hashlib
+import stats
+from reply import draft_reply, LANGS
 from report import build_report_pdf, clean_details
 
 MAX_CHARS = 5000
+_last_recorded = {}
 
 # The dataset is English only, so one case each for Hinglish, Hindi and Marathi shows the language support.
 HINDI_EXAMPLE = {"label": "हिन्दी", "text": "मुझे 3 दिन से तेज बुखार है, बदन दर्द और कमजोरी है। उल्टी नहीं है।"}
@@ -67,7 +69,30 @@ def create_app() -> Flask:
             return jsonify({"error": "Please write a few words about the symptoms first."}), 400
         if len(text) > MAX_CHARS:
             return jsonify({"error": f"Please keep the text under {MAX_CHARS} characters."}), 413
-        return jsonify(analyze(text))
+        result = analyze(text)
+        if payload.get("record") is True:
+            digest = hashlib.sha256(text.encode("utf-8")).hexdigest()
+            if digest != _last_recorded.get("d"):   # pressing Analyze again on the same text counts once
+                _last_recorded["d"] = digest
+                stats.add([stats.event(result)])
+        return jsonify(result)
+
+    @app.post("/api/reply")
+    def reply():
+        payload = request.get_json(silent=True)
+        if not isinstance(payload, dict) or not isinstance(payload.get("text"), str) or not payload["text"].strip():
+            return jsonify({"error": "Analyze a text first."}), 400
+        lang = payload.get("lang", "en")
+        if lang not in LANGS:
+            return jsonify({"error": "Choose English, Hindi or Marathi."}), 400
+        text = payload["text"].strip()
+        if len(text) > MAX_CHARS:
+            return jsonify({"error": f"Please keep the text under {MAX_CHARS} characters."}), 413
+        return jsonify({"lang": lang, "message": draft_reply(analyze(text), lang)})
+
+    @app.get("/api/stats")
+    def stats_summary():
+        return jsonify(stats.summary())
 
     @app.post("/api/report")
     def report():
@@ -80,68 +105,6 @@ def create_app() -> Flask:
         pdf = build_report_pdf(analyze(text), clean_details(payload.get("details")))
         return Response(pdf, mimetype="application/pdf",
                         headers={"Content-Disposition": "attachment; filename=symptoscribe-report.pdf"})
-
-    @app.post("/api/triage")
-    def triage_queue():
-        payload = request.get_json(silent=True)
-        pts = payload.get("patients") if isinstance(payload, dict) else None
-        if not isinstance(pts, list) or not [p for p in pts if isinstance(p, dict) and str(p.get("text", "")).strip()]:
-            return jsonify({"error": "Add at least one patient with a description."}), 400
-        return jsonify(triage([p for p in pts if isinstance(p, dict)]))
-
-    # ---- patient pre-visit intake
-    def _intake_row(r):
-        out = {"token": r["token"], "label": r["label"], "created": r["created"], "submitted": r["submitted"], "name": r["name"], "text": r["text"]}
-        if r["submitted"]:
-            a = analyze(r["text"])
-            out.update(level=a["attention_level"], top_flag=a["red_flags"][0]["title"] if a["red_flags"] else "",
-                       symptoms=[s["name"] for s in a["symptoms"] if s["subject"] == "patient" and s["status"] in ("present", "uncertain")][:6])
-        return out
-
-    @app.get("/p/<token>")
-    def patient_page(token):
-        rec = intake.get(token)
-        return render_template("patient.html", valid=rec is not None, done=bool(rec and rec["submitted"]),
-                               label=rec["label"] if rec else ""), (200 if rec else 404)
-
-    @app.get("/api/intake")
-    def intake_list():
-        ip = ""
-        try:
-            if os.environ.get("HOST", "127.0.0.1") not in ("0.0.0.0", "::"):
-                raise OSError   # only reachable from this computer, so a Wi-Fi address would not work
-            with socket.socket(socket.AF_INET, socket.SOCK_DGRAM) as s:
-                s.connect(("10.255.255.255", 1))
-                ip = s.getsockname()[0]
-        except OSError:
-            pass
-        return jsonify({"items": [_intake_row(r) for r in intake.list_all()], "lan_ip": ip})
-
-    @app.post("/api/intake")
-    def intake_create():
-        payload = request.get_json(silent=True) or {}
-        label = payload.get("label") if isinstance(payload, dict) and isinstance(payload.get("label"), str) else ""
-        rec = intake.create(label)
-        return jsonify({"token": rec["token"], "path": f"/p/{rec['token']}"}), 201
-
-    @app.post("/api/intake/<token>/submit")
-    def intake_submit(token):
-        payload = request.get_json(silent=True)
-        if not isinstance(payload, dict) or not isinstance(payload.get("text"), str) or not payload["text"].strip():
-            return jsonify({"error": "Please write how you feel first."}), 400
-        if len(payload["text"].strip()) > 3000:
-            return jsonify({"error": "Please keep it under 3000 characters."}), 413
-        name = payload.get("name") if isinstance(payload.get("name"), str) else ""
-        res = intake.submit(token, name, payload["text"])
-        if res == "missing":
-            return jsonify({"error": "This link is not valid."}), 404
-        if res == "done":
-            return jsonify({"error": "This form was already sent."}), 409
-        return jsonify({"ok": True})
-
-    @app.delete("/api/intake/<token>")
-    def intake_delete(token):
-        return (jsonify({"ok": True}), 200) if intake.delete(token) else (jsonify({"error": "Not found."}), 404)
 
     @app.get("/api/evaluation")
     def evaluation():

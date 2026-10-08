@@ -15,9 +15,8 @@
   const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
   /* ------------------------------------------------------------ views */
-  const VIEWS = ["welcome", "home", "analyzer", "live", "queue", "intake", "evaluation", "about"];
-  let evalLoaded = false;
-  let datasetLoaded = false;
+  const VIEWS = ["welcome", "home", "analyzer", "dashboard", "evaluation"];
+  let accuracyLoaded = false;
 
   function showView(name) {
     if (!VIEWS.includes(name)) name = "home";
@@ -29,10 +28,9 @@
       if (a.dataset.view === name) a.setAttribute("aria-current", "page");
       else a.removeAttribute("aria-current");
     });
-    if (name === "intake") loadIntake();
+    if (name === "dashboard") loadDashboard();
     if (name === "evaluation") {
-      if (!evalLoaded) loadEvaluation();
-      if (!datasetLoaded) loadDataset();
+      if (!accuracyLoaded) loadAccuracy();
     }
     window.scrollTo(0, 0);
   }
@@ -164,7 +162,7 @@
       <tbody>${body}</tbody></table></div>`;
   }
 
-  function render(r) {
+  function render(r, animate = false) {
     lastResult = r;
     const [title, fallback] = LEVELS[r.attention_level] || LEVELS.routine;
     const sub = r.red_flags.length ? r.red_flags[0].title : fallback;
@@ -182,6 +180,13 @@
     const chk = (r.checklist && r.checklist.length)
       ? `<div class="block"><h3>Still to ask <span class="chk-count" id="chk-count"></span></h3><ul class="checklist">${r.checklist.map((c, i) => `<li class="${c.done ? "is-done" : ""}"><label><input type="checkbox" data-i="${i}"${c.done ? " checked disabled" : ""}><span>${esc(c.label)}</span>${c.done ? "<small>mentioned</small>" : ""}</label></li>`).join("")}</ul></div>`
       : "";
+    const replyDefault = (r.language && ((r.language.parts || []).includes("Marathi") ? "mr" : (r.language.parts || []).includes("Hindi") ? "hi" : "en")) || "en";
+    const reply = r.symptoms.some((s) => s.subject === "patient")
+      ? `<div class="block reply"><h3>Reply to the patient</h3>
+          <div class="reply-bar"><label>Language <select id="reply-lang" aria-label="Reply language"><option value="en">English</option><option value="hi">हिन्दी</option><option value="mr">मराठी</option></select></label><button class="btn small" type="button" id="reply-draft">Draft reply</button></div>
+          <textarea id="reply-text" rows="10" hidden aria-label="Reply to the patient"></textarea>
+          <div class="reply-actions" id="reply-actions" hidden><button class="btn small primary" type="button" id="reply-send">Send reply</button><button class="btn small" type="button" id="reply-copy">Copy reply</button></div></div>`
+      : "";
     outEl.innerHTML = `<article class="result">
       <div class="verdict lvl-${esc(r.attention_level)}">
         <div class="verdict-text">${esc(title)}<small>${esc(sub)}</small></div>
@@ -195,15 +200,72 @@
       ${vit}
       <div class="block"><h3>Structured symptoms</h3>${tableHtml(r.symptoms)}</div>
       ${chk}
-      <p class="safety-note">Decision support only. This is not a diagnosis; the doctor decides.</p>
+      ${reply}
     </article>`;
     renderMarked(r.text, r.highlights);
     const boxes = outEl.querySelectorAll(".checklist input");
     const countChk = () => { const c = $("#chk-count"); if (c) c.textContent = `${[...boxes].filter((b) => b.checked).length} of ${boxes.length} covered`; };
     boxes.forEach((b) => b.addEventListener("change", () => { b.closest("li").classList.toggle("is-done", b.checked); countChk(); }));
     countChk();
+    bindReply(r, replyDefault);
     $("#copy-note").addEventListener("click", copyNote);
     $("#dl-report").addEventListener("click", downloadReport);
+    if (animate) {
+      const calm = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (!calm) playResult();
+      // take the reader down to the review
+      const top = outEl.getBoundingClientRect().top + window.scrollY - 24;
+      glideTo(top, calm ? 0 : 800);
+    }
+  }
+
+  // a gentle scroll that does not depend on the browser's own smooth-scroll support
+  let glideTimer = 0;
+  function glideTo(y, ms) {
+    clearTimeout(glideTimer);
+    const from = window.scrollY, to = Math.max(0, Math.round(y)), t0 = performance.now();
+    if (!ms || Math.abs(to - from) < 4) { window.scrollTo(0, to); return; }
+    const stop = () => clearTimeout(glideTimer);
+    window.addEventListener("wheel", stop, { once: true, passive: true });   // the reader takes over
+    window.addEventListener("touchstart", stop, { once: true, passive: true });
+    const step = () => {
+      const p = Math.min(1, (performance.now() - t0) / ms), e = 1 - Math.pow(1 - p, 3);
+      window.scrollTo(0, from + (to - from) * e);
+      if (p < 1) glideTimer = setTimeout(step, 16);
+    };
+    step();
+  }
+
+  // the result builds up step by step: banner, then the note word by word, then the other blocks and table rows
+  function playResult() {
+    const art = outEl.querySelector(".result");
+    if (!art) return;
+    art.classList.add("reveal");
+    const note = art.querySelector(".note");
+    let t = 0.5;                                    // seconds
+    if (note) {
+      const words = note.textContent.split(/(\s+)/);
+      const count = words.filter((w) => w.trim()).length;
+      const per = Math.min(0.045, 2.2 / Math.max(1, count));
+      let k = 0;
+      note.innerHTML = words.map((w) => (w.trim() ? `<span class="w" style="animation-delay:${(0.5 + k++ * per).toFixed(2)}s">${esc(w)}</span>` : w)).join("");
+      t = 0.5 + count * per + 0.15;
+    }
+    [...art.children].forEach((el, i) => {
+      if (i === 0) { el.style.animationDelay = "0s"; return; }
+      if (el.contains(note)) { el.style.animationDelay = "0.3s"; return; }
+      el.style.animationDelay = `${t.toFixed(2)}s`;
+      el.querySelectorAll("tbody tr").forEach((tr, n) => { tr.style.animationDelay = `${(t + 0.25 + n * 0.09).toFixed(2)}s`; });
+      el.querySelectorAll(".vital, .flags li, .checklist li").forEach((x, n) => { x.style.animationDelay = `${(t + 0.2 + n * 0.1).toFixed(2)}s`; });
+      t += 0.55;
+    });
+  }
+
+  // an example only fills the text box; the old result is cleared so it never sits next to different text
+  function resetResult() {
+    lastResult = null;
+    markedWrap.hidden = true;
+    outEl.innerHTML = '<div class="empty"><p>The structured note appears here.</p></div>';
   }
 
   function showError(msg) {
@@ -211,7 +273,7 @@
   }
 
   /* ------------------------------------------------------------ actions */
-  async function analyze() {
+  async function analyze(record = false) {
     const text = textEl.value.trim();
     if (!text) {
       showError("Please write a few words about the symptoms first.");
@@ -224,11 +286,11 @@
       const res = await fetch("/api/analyze", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text, record: record === true }),
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Something went wrong.");
-      render(data);
+      render(data, record === true);
     } catch (err) {
       showError(err.message || "The server could not be reached. Check that app.py is still running.");
     } finally {
@@ -328,95 +390,15 @@
     });
   }
 
-  /* ------------------------------------------------------------ evaluation view */
-  const pct = (x) => (x * 100).toFixed(1) + "%";
-
-  function metricRow(name, m) {
-    return `<tr><td>${esc(name)}</td><td>${pct(m.precision)}</td><td>${pct(m.recall)}</td><td>${pct(m.f1)}</td><td>${m.tp}</td><td>${m.fp}</td><td>${m.fn}</td></tr>`;
-  }
-  const metricHead = '<thead><tr><th>Task</th><th>Precision</th><th>Recall</th><th>F1</th><th>Correct</th><th>Extra</th><th>Missed</th></tr></thead>';
-
-  async function loadDataset() {
-    const body = $("#dataset-body");
+  /* ------------------------------------------------------------ how it works: one line of accuracy */
+  async function loadAccuracy() {
+    const line = $("#accuracy-line");
     try {
-      const res = await fetch("/api/dataset");
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error || "Could not read the dataset.");
-      datasetLoaded = true;
-      const max = d.top_symptoms[0].count;
-      body.innerHTML = `
-        <div class="cards">
-          <div class="metric"><div class="num">${d.texts.toLocaleString()}</div><div class="lab">patient descriptions read</div></div>
-          <div class="metric"><div class="num">${pct(d.coverage)}</div><div class="lab">had at least one symptom found</div></div>
-          <div class="metric"><div class="num">${d.avg_symptoms.toFixed(1)}</div><div class="lab">symptoms found per description</div></div>
-          <div class="metric"><div class="num">${d.distinct_symptoms}</div><div class="lab">different symptoms recognised</div></div>
-        </div>
-        <p class="muted src">Data: <a href="${esc(d.source.url)}" target="_blank" rel="noopener">${esc(d.source.name)}</a> on Kaggle (${esc(d.source.author)}), ${d.labels} categories of 50 descriptions each. Coverage shows what the engine finds, not accuracy: the dataset has no marked answers.</p>
-
-        <h2 class="plain">Most common symptoms found</h2>
-        <div class="card bars">${d.top_symptoms.map((t) => `<div class="bar-row"><span class="bar-name">${esc(cap(t.name))}</span><span class="bar-track"><i style="width:${(t.count / max) * 100}%"></i></span><span class="bar-n">${t.count}</span></div>`).join("")}</div>
-
-        <h2 class="plain">Red flags raised</h2>
-        <p class="muted">${d.texts_with_red_flag} of ${d.texts.toLocaleString()} descriptions (${pct(d.texts_with_red_flag / d.texts)}) raised at least one flag.</p>
-        <div class="card bars">${d.red_flags.map((f) => `<div class="bar-row"><span class="bar-name">${esc(f.title)}</span><span class="bar-track"><i style="width:${(f.count / d.red_flags[0].count) * 100}%"></i></span><span class="bar-n">${f.count}</span></div>`).join("")}</div>
-
-        <h2 class="plain">Coverage by category</h2>
-        <p class="muted">Sorted from weakest to strongest. The top symptoms found in each category are shown.</p>
-        <div class="eval-table table-wrap"><table><thead><tr><th>Dataset category</th><th>Coverage</th><th>Top symptoms found</th></tr></thead><tbody>
-          ${d.by_label.map((l) => `<tr><td>${esc(cap(l.label))}</td><td><span class="cov"><i style="width:${l.coverage * 100}%"></i></span> ${pct(l.coverage)}</td><td>${esc(l.top.join(", ") || "—")}</td></tr>`).join("")}
-        </tbody></table></div>
-
-        <h2 class="plain">Where nothing was found</h2>
-        <p class="muted">${d.miss_count} descriptions had no symptom found, usually wording the lexicon does not know yet (for example <em>peeling</em> or <em>scales</em>). These are the next words to add. Showing the first ${d.misses.length}; click one to open it in the analyzer.</p>
-        <div class="misses">${d.misses.map((m) => `<button type="button" class="miss" data-text="${esc(m.text)}"><small>${esc(cap(m.label))}</small>${esc(m.text)}</button>`).join("")}</div>
-      `;
-      body.querySelectorAll(".miss").forEach((b) => b.addEventListener("click", () => {
-        textEl.value = b.dataset.text;
-        $("#count").textContent = `${textEl.value.length} / 5000`;
-        location.hash = "#analyzer";
-        analyze();
-      }));
-    } catch (err) {
-      body.innerHTML = `<div class="error" role="alert"><strong>Could not load the dataset.</strong> ${esc(err.message)}</div>`;
-    }
-  }
-
-  async function loadEvaluation() {
-    const body = $("#eval-body");
-    try {
-      const res = await fetch("/api/evaluation");
-      const e = await res.json();
-      if (!res.ok) throw new Error(e.error || "Evaluation failed.");
-      evalLoaded = true;
-      const slotNames = { duration: "Duration", severity: "Severity", trend: "Course (trend)", location: "Body location", triggers: "Triggers" };
-      body.innerHTML = `
-        <div class="cards">
-          <div class="metric"><div class="num">${pct(e.overall.detection.f1)}</div><div class="lab">Symptom finding (F1)</div></div>
-          <div class="metric"><div class="num">${pct(e.overall.assertion.f1)}</div><div class="lab">Finding and present / denied (F1)</div></div>
-          <div class="metric"><div class="num">${pct(e.overall.slots_micro.f1)}</div><div class="lab">All details together (F1)</div></div>
-          <div class="metric"><div class="num">${e.dataset.cases}</div><div class="lab">annotated texts, ${e.dataset.symptom_annotations} symptom annotations</div></div>
-        </div>
-        <h2 class="plain">Finding symptoms and their status</h2>
-        <div class="eval-table table-wrap"><table>${metricHead}<tbody>
-          ${metricRow("Symptom found", e.overall.detection)}
-          ${metricRow("Symptom found with correct status", e.overall.assertion)}
-        </tbody></table></div>
-        <h2 class="plain">Extracting the details</h2>
-        <div class="eval-table table-wrap"><table>${metricHead}<tbody>
-          ${Object.entries(e.slots).map(([k, v]) => metricRow(slotNames[k] || k, v)).join("")}
-        </tbody></table></div>
-        <h2 class="plain">Development set and held-out set</h2>
-        <div class="eval-table table-wrap"><table>${metricHead}<tbody>
-          ${Object.entries(e.by_set).map(([k, v]) => metricRow(`${({ indic: "Hindi and Marathi", mixed: "Mixed languages", heldout: "Held-out" }[k] || cap(k))} (${v.cases} texts) — symptom and status`, v.assertion)).join("")}
-        </tbody></table></div>
-        <p class="muted">${esc(e.note)}</p>
-        ${e.history && e.history.heldout_first_run ? `<p class="muted">First run on the held-out set: ${pct(e.history.heldout_first_run.found_and_status_f1)} F1 for symptom and status, before its errors were studied. First run on the challenge set: ${pct(e.history.challenge_first_run.found_and_status_f1)}.</p>` : ""}
-        <h2 class="plain">Where it still goes wrong</h2>
-        ${e.failures.length ? e.failures.map((f) => `<div class="fail"><strong>${esc(f.id)}</strong> — ${esc(f.kind)}<br><code>${esc(f.text)}</code><br>${esc(f.detail)}</div>`).join("") : "<p>No errors on the annotated texts.</p>"}
-      `;
-    } catch (err) {
-      body.innerHTML = `<div class="error" role="alert"><strong>Could not load the evaluation.</strong> ${esc(err.message)}</div>`;
-    }
+      const e = await (await fetch("/api/evaluation")).json();
+      const pct = (x) => Math.round(x * 100) + "%";
+      accuracyLoaded = true;
+      line.textContent = `On ${e.dataset.cases} texts marked by hand, it finds ${pct(e.overall.detection.f1)} of the symptoms correctly (${pct(e.by_set.challenge.detection.f1)} on the hardest, unseen set). The author marked these texts, so real patient text will score lower.`;
+    } catch { line.textContent = ""; }
   }
 
   /* ------------------------------------------------------------ linking text <-> table */
@@ -582,335 +564,72 @@
     });
   }
 
-  // text with marked spans (offsets count code points, like the engine)
-  function spanInner(text, spans) {
-    const cps = Array.from(text), n = cps.length;
-    const owner = new Array(n).fill(-1);
-    spans.forEach((h, idx) => {
-      for (let i = h.start; i < Math.min(h.end, n); i++) {
-        if (owner[i] === -1 || (PRIORITY[h.label] || 9) < (PRIORITY[spans[owner[i]].label] || 9)) owner[i] = idx;
-      }
-    });
-    let html = "", i = 0, k = 0;
-    while (i < n) {
-      const o = owner[i];
-      let j = i;
-      while (j < n && owner[j] === o) j++;
-      const seg = esc(cps.slice(i, j).join(""));
-      html += o === -1 ? seg : `<mark class="hl hl-${spans[o].label}" style="--i:${k++}" title="${esc(spans[o].title || "")}">${seg}</mark>`;
-      i = j;
-    }
-    return html;
-  }
-
-  /* ------------------------------------------------------------ live consultation */
-  const DEMO_LINES = [
-    "Doctor, mujhe teen din se bukhar hai.",
-    "Sath me sar dard bhi hai, but cough nahi hai.",
-    "मुझे पेट में दर्द भी है और उल्टी हो रही है।",
-    "I took paracetamol but the headache gets worse after eating.",
-    "Chest pain nahi hai, par thoda breathless feel hota hai.",
-  ];
-  const lv = { text: "", interim: "", rec: null, listening: false, last: null, seen: new Set(), seq: 0, demo: 0, restartTimer: null };
-  const SpeechRec = window.SpeechRecognition || window.webkitSpeechRecognition;
-
-  function lvStatus(msg, live = false) {
-    const el = $("#lv-status");
-    el.textContent = msg;
-    el.classList.toggle("on", live);
-  }
-
-  function lvDrawTranscript() {
-    const box = $("#lv-transcript");
-    const r = lv.last;
-    const body = r && r.text === lv.text ? spanInner(lv.text, r.highlights) : esc(lv.text);
-    const interim = lv.interim ? ` <span class="lv-interim">${esc(lv.interim)}</span>` : "";
-    box.innerHTML = body || interim
-      ? `<p class="pl-text">${body}${interim}</p>`
-      : '<span class="lv-placeholder">What the patient says appears here, sentence by sentence.</span>';
-    box.scrollTop = box.scrollHeight;
-  }
-
-  function lvRender(r) {
-    lv.last = r;
-    lastResult = r;                                   // so Copy note and Download report work from this page
-    lvDrawTranscript();
-    const [title] = LEVELS[r.attention_level] || LEVELS.routine;
-    const patient = r.symptoms.filter((s) => s.subject === "patient");
-    const others = r.symptoms.filter((s) => s.subject !== "patient");
-    const card = (s) => {
-      const key = `${s.name}|${s.status}|${s.subject}`;
-      const fresh = !lv.seen.has(key);
-      lv.seen.add(key);
-      const who = s.subject !== "patient" ? ` · ${esc(s.subject)}` : "";
-      return `<div class="lv-card${fresh ? " is-new" : ""}"><div class="lv-card-top"><b>${esc(cap(s.name))}</b><span class="pl-tag st-${s.status}">${esc(STATUS_NAME[s.status])}${who}</span></div><p>${esc(s.summary.replace(/^[^(]*/, "").replace(/^\(|\)$/g, "") || (s.reason || "no details yet"))}</p></div>`;
-    };
-    $("#lv-out").innerHTML = `
-      <div class="lv-verdict lvl-${esc(r.attention_level)}"><span>⚑</span><div><b>${esc(title)}</b><small>${r.red_flags.length ? esc(r.red_flags.map((f) => f.title).join(" · ")) : "No red flags so far"}</small></div><em class="lang-badge">${esc(r.language.label || r.language.name)}</em></div>
-      <div class="lv-block"><div class="lv-label">Note for the doctor</div><p class="lv-note">${esc(r.summary)}</p></div>
-      <div class="lv-block"><div class="lv-label">Symptoms (${patient.length})</div><div class="lv-cards">${patient.map(card).join("") || '<p class="muted">Nothing found yet.</p>'}${others.map(card).join("")}</div></div>
-      <div class="lv-actions"><button class="btn small" type="button" id="lv-copy">Copy note</button><button class="btn small" type="button" id="lv-report">⤓ Download report</button></div>`;
-    $("#lv-copy").addEventListener("click", async (e) => {
-      try { await navigator.clipboard.writeText(noteText(r)); e.target.textContent = "Copied"; } catch { e.target.textContent = "Could not copy"; }
-      setTimeout(() => (e.target.textContent = "Copy note"), 1500);
-    });
-    $("#lv-report").addEventListener("click", () => { lastResult = r; downloadReport(); });
-  }
-
-  async function lvAnalyze() {
-    const mine = ++lv.seq;
-    if (!lv.text.trim()) { lv.last = null; $("#lv-out").innerHTML = '<div class="empty"><p>The live note appears here.</p></div>'; lvDrawTranscript(); return; }
-    try {
-      const res = await fetch("/api/analyze", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: lv.text }) });
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error || "Could not analyze.");
-      if (mine === lv.seq) lvRender(d);                // ignore answers that arrive out of order
-    } catch (e) {
-      lvStatus(e.message);
-    }
-  }
-
-  function lvAdd(sentence) {
-    let t = sentence.trim().replace(/\s+/g, " ");
-    if (!t) return;
-    if (!/[.!?\u0964]$/.test(t)) t += ".";
-    lv.text = (lv.text ? lv.text + " " : "") + t;
-    lv.interim = "";
-    lvAnalyze();
-  }
-
-  function lvSetListening(on) {
-    lv.listening = on;
-    $("#lv-start").classList.toggle("listening", on);
-    $("#lv-start-label").textContent = on ? "Stop listening" : "Start listening";
-  }
-
-  function lvStopMic(msg = "Stopped") {
-    clearTimeout(lv.restartTimer);
-    const wasOn = lv.listening;
-    lvSetListening(false);
-    try { lv.rec && lv.rec.stop(); } catch { /* already stopped */ }
-    lv.interim = "";
-    lvDrawTranscript();
-    if (wasOn) lvStatus(msg);
-  }
-
-  function lvStartMic() {
-    if (!SpeechRec) { lvStatus("This browser has no speech recognition. Type a sentence below or play the demo."); return; }
-    lvStopDemo();
-    const rec = new SpeechRec();
-    rec.continuous = true;
-    rec.interimResults = true;
-    rec.lang = $("#lv-lang").value;
-    rec.onresult = (e) => {
-      let interim = "";
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const res = e.results[i];
-        if (res.isFinal) lvAdd(res[0].transcript);
-        else interim += res[0].transcript;
-      }
-      lv.interim = interim.trim();
-      lvDrawTranscript();
-    };
-    rec.onerror = (e) => {
-      if (e.error === "not-allowed" || e.error === "service-not-allowed") lvStopMic("Microphone permission was denied. Allow it in the browser, or type instead.");
-      else if (e.error !== "no-speech" && e.error !== "aborted") lvStatus("Speech recognition problem: " + e.error);
-    };
-    rec.onend = () => {                                 // browsers stop after a pause, so keep it running
-      if (lv.listening) lv.restartTimer = setTimeout(() => { try { rec.start(); } catch { /* already running */ } }, 250);
-    };
-    lv.rec = rec;
-    try { rec.start(); lvSetListening(true); lvStatus("Listening… speak naturally", true); }
-    catch { lvStatus("Could not start the microphone."); }
-  }
-
-  function lvStopDemo() { lv.demo++; }
-
-  async function lvRunDemo() {
-    lvStopMic();
-    lvClear();
-    const run = ++lv.demo;
-    lvStatus("Demo conversation playing…", true);
-    const wait = (ms) => new Promise((r) => setTimeout(r, ms));
-    for (const line of DEMO_LINES) {
-      const chars = Array.from(line);
-      for (let i = 1; i <= chars.length; i++) {            // typed out like live speech
-        if (run !== lv.demo) return;
-        lv.interim = chars.slice(0, i).join("");
-        lvDrawTranscript();
-        await wait(26);
-      }
-      await wait(250);
-      if (run !== lv.demo) return;
-      lvAdd(line);
-      await wait(1900);
-    }
-    if (run === lv.demo) lvStatus("Demo finished");
-  }
-
-  function lvClear() {
-    lvStopDemo();
-    lv.text = ""; lv.interim = ""; lv.last = null; lv.seen = new Set();
-    lvAnalyze();
-    if (!lv.listening) lvStatus("Ready");
-  }
-
-  function bindLive() {
-    $("#lv-start").addEventListener("click", () => (lv.listening ? lvStopMic() : lvStartMic()));
-    $("#lv-demo").addEventListener("click", lvRunDemo);
-    $("#lv-clear").addEventListener("click", lvClear);
-    $("#lv-lang").addEventListener("change", () => { if (lv.listening) { lvStopMic("Language changed"); lvStartMic(); } });
-    $("#lv-form").addEventListener("submit", (e) => { e.preventDefault(); lvStopDemo(); lvAdd($("#lv-type").value); $("#lv-type").value = ""; });
-    window.addEventListener("hashchange", () => { if (location.hash !== "#live") { lvStopMic(); lvStopDemo(); } });   // never keep recording in the background
-  }
-
-  /* ------------------------------------------------------------ triage queue */
-  const Q_SAMPLE = [
-    { name: "Meera", text: "I have had a cold and a mild sore throat for 2 days. No fever." },
-    { name: "Mr Kulkarni, 72", text: "72 year old man with severe chest pain since morning, sweating and feeling breathless. BP 90/60." },
-    { name: "Baby Arjun", text: "My 2 month old baby has had fever since last night and is not feeding well." },
-    { name: "Rohit", text: "Mujhe 3 din se bukhar hai aur sar dard bhi hai, khansi nahi hai." },
-  ];
-  const q = { rows: [{ name: "", text: "" }] };
-
-  function qSync() {
-    $("#q-rows").querySelectorAll(".q-row").forEach((row, i) => {
-      q.rows[i] = { name: $(".q-name", row).value, text: $(".q-text", row).value };
-    });
-  }
-  function qRender() {
-    $("#q-rows").innerHTML = q.rows.map((r, i) => `<div class="q-row">
-      <span class="q-n">${i + 1}</span>
-      <input class="q-name" type="text" maxlength="60" placeholder="Name (optional)" value="${esc(r.name)}" aria-label="Patient ${i + 1} name">
-      <textarea class="q-text" rows="2" placeholder="What the patient says" aria-label="Patient ${i + 1} description">${esc(r.text)}</textarea>
-      <button class="an-del" type="button" data-del="${i}" aria-label="Remove patient ${i + 1}">×</button></div>`).join("");
-  }
-  function qRenderResult(list) {
-    $("#q-out").innerHTML = `<h3 class="q-title">Seen in this order</h3><ol class="q-list">${list.map((p) => `
-      <li class="q-card lvl-${esc(p.level)}">
-        <span class="q-rank">${p.rank}</span>
-        <div class="q-main">
-          <div class="q-top"><b>${esc(p.name)}</b><span class="q-level">${esc(LEVELS[p.level][0])}</span></div>
-          <p class="q-flag">${p.top_flag ? esc(p.top_flag) + (p.flags > 1 ? ` <small>+${p.flags - 1} more</small>` : "") : "No red flags found."}</p>
-          <div class="q-chips">${p.symptoms.map((s) => `<span>${esc(s)}</span>`).join("") || '<span class="muted">No symptoms found</span>'}</div>
-        </div>
-        <div class="q-side"><small>${p.to_ask} to ask</small><button class="btn small" type="button" data-open="${p.index}">Open note</button></div>
-      </li>`).join("")}</ol>`;
-    q.result = list;
-  }
-  async function qSort() {
-    qSync();
-    const out = $("#q-out"), btn = $("#q-sort");
-    const patients = q.rows.filter((r) => r.text.trim());
-    if (!patients.length) { out.innerHTML = '<div class="error" role="alert">Add at least one patient with a description.</div>'; return; }
-    btn.disabled = true; btn.textContent = "Sorting…";
-    try {
-      const res = await fetch("/api/triage", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ patients }) });
-      const d = await res.json();
-      if (!res.ok) throw new Error(d.error || "Could not sort.");
-      q.sorted = patients;
-      qRenderResult(d);
-    } catch (e) {
-      out.innerHTML = `<div class="error" role="alert"><strong>Could not sort.</strong> ${esc(e.message)}</div>`;
-    } finally {
-      btn.disabled = false; btn.textContent = "Sort by urgency";
-    }
-  }
-  function openInAnalyzer(text) {
-    textEl.value = text;
-    location.hash = "#analyzer";
-    analyze();
-  }
-  function bindQueue() {
-    qRender();
-    $("#q-add").addEventListener("click", () => { qSync(); q.rows.push({ name: "", text: "" }); qRender(); $("#q-rows").lastElementChild.querySelector("textarea").focus(); });
-    $("#q-sort").addEventListener("click", qSort);
-    $("#q-sample").addEventListener("click", () => { q.rows = Q_SAMPLE.map((r) => ({ ...r })); qRender(); qSort(); });
-    $("#q-clear").addEventListener("click", () => { q.rows = [{ name: "", text: "" }]; q.sorted = null; qRender(); $("#q-out").innerHTML = ""; });
-    $("#q-rows").addEventListener("click", (e) => {
-      const d = e.target.closest("[data-del]");
-      if (!d) return;
-      qSync(); q.rows.splice(+d.dataset.del, 1); if (!q.rows.length) q.rows.push({ name: "", text: "" }); qRender();
-    });
-    $("#q-out").addEventListener("click", (e) => {
-      const b = e.target.closest("[data-open]");
-      if (b && q.sorted) openInAnalyzer(q.sorted[+b.dataset.open].text);
-    });
-    $("#q-inbox").addEventListener("click", async () => {
-      try {
-        const d = await (await fetch("/api/intake")).json();
-        const got = d.items.filter((i) => i.submitted);
-        if (!got.length) { $("#q-out").innerHTML = '<p class="muted">No patient has sent a form yet.</p>'; return; }
-        qSync();
-        q.rows = q.rows.filter((r) => r.text.trim()).concat(got.map((i) => ({ name: i.name || i.label, text: i.text })));
-        qRender(); qSort();
-      } catch { $("#q-out").innerHTML = '<div class="error" role="alert">Could not read the intake forms.</div>'; }
-    });
-  }
-
-  /* ------------------------------------------------------------ patient intake */
-  let inItems = [], inLan = "", inTimer = null;
-  const LVL_SHORT = { routine: "Routine", attention: "Needs attention", urgent: "See soon", emergency: "Urgent care" };
-
-  function inBase() {
-    const local = ["localhost", "127.0.0.1", "[::1]"].includes(location.hostname);
-    return local && inLan ? `http://${inLan}${location.port ? ":" + location.port : ""}` : location.origin;
-  }
-  function inRender() {
-    const base = inBase();
-    $("#in-hint").textContent = ["localhost", "127.0.0.1"].includes(location.hostname) && !inLan
-      ? "These links open on this computer only. To let a patient on the same Wi-Fi open one, start the app with HOST=0.0.0.0."
-      : "";
-    if (!inItems.length) { $("#in-list").innerHTML = '<div class="empty"><p>No links yet. Create one above.</p></div>'; return; }
-    $("#in-list").innerHTML = inItems.map((it) => {
-      const when = new Date((it.submitted || it.created) * 1000).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
-      if (!it.submitted) {
-        const url = base + "/p/" + it.token;
-        return `<div class="in-card"><div class="in-top"><b>${esc(it.label || "Patient link")}</b><span class="in-state wait">Waiting for the patient</span></div>
-          <div class="in-link"><input type="text" readonly value="${esc(url)}" aria-label="Patient link"><button class="btn small" type="button" data-copy="${esc(url)}">Copy link</button><button class="btn small" type="button" data-del="${esc(it.token)}">Delete</button></div>
-          <small class="muted">Created ${esc(when)}</small></div>`;
-      }
-      return `<div class="in-card lvl-${esc(it.level)}"><div class="in-top"><b>${esc(it.name || it.label || "Patient")}</b><span class="in-state got">Received</span><span class="q-level">${esc(LVL_SHORT[it.level])}</span></div>
-        <p class="q-flag">${it.top_flag ? esc(it.top_flag) : "No red flags found."}</p>
-        <div class="q-chips">${it.symptoms.map((s) => `<span>${esc(s)}</span>`).join("")}</div>
-        <p class="in-text">${esc(it.text.length > 220 ? it.text.slice(0, 220) + "…" : it.text)}</p>
-        <div class="in-link"><button class="btn small primary" type="button" data-open="${esc(it.token)}">Open note</button><button class="btn small" type="button" data-del="${esc(it.token)}">Delete</button><small class="muted">Received ${esc(when)}</small></div></div>`;
-    }).join("");
-  }
-  async function loadIntake() {
-    clearInterval(inTimer);
-    try {
-      const d = await (await fetch("/api/intake")).json();
-      inItems = d.items; inLan = d.lan_ip || "";
-      const typing = document.activeElement && document.activeElement.closest && document.activeElement.closest("#in-list");
-      if (!typing) inRender();
-    } catch { $("#in-list").innerHTML = '<div class="error" role="alert">Could not load the forms.</div>'; }
-    inTimer = setInterval(() => { if ($("#view-intake").hidden) clearInterval(inTimer); else loadIntake(); }, 8000);
-  }
-  function bindIntake() {
-    $("#in-create").addEventListener("click", async () => {
-      const btn = $("#in-create");
+  /* ------------------------------------------------------------ reply to the patient */
+  function bindReply(r, def) {
+    const sel = $("#reply-lang"), box = $("#reply-text"), acts = $("#reply-actions"), btn = $("#reply-draft");
+    if (!sel) return;
+    sel.value = def;
+    let edited = false;
+    async function draft() {
       btn.disabled = true;
       try {
-        await fetch("/api/intake", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ label: $("#in-label").value }) });
-        $("#in-label").value = "";
-        await loadIntake();
+        const res = await fetch("/api/reply", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: r.text, lang: sel.value }) });
+        const d = await res.json();
+        if (!res.ok) throw new Error(d.error || "Could not draft a reply.");
+        box.value = d.message; box.hidden = false; acts.hidden = false; edited = false;
+        resetSend();
+        btn.textContent = "Draft again";
+      } catch (e) {
+        box.value = e.message; box.hidden = false;
       } finally { btn.disabled = false; }
+    }
+    btn.addEventListener("click", () => { if (edited && !confirm("Replace your edits with a new draft?")) return; draft(); });
+    sel.addEventListener("change", () => { if (!box.hidden && (!edited || confirm("Replace your edits with a new draft?"))) draft(); else if (edited) sel.value = sel.dataset.last || sel.value; sel.dataset.last = sel.value; });
+    sel.dataset.last = sel.value;
+    box.addEventListener("input", () => { edited = true; resetSend(); });
+    // demo only: marks the reply as sent, nothing leaves the page
+    const sendBtn = $("#reply-send");
+    function resetSend() { sendBtn.disabled = false; sendBtn.textContent = "Send reply"; sendBtn.classList.remove("is-sent"); }
+    sendBtn.addEventListener("click", () => {
+      sendBtn.disabled = true; sendBtn.textContent = "✓ Sent"; sendBtn.classList.add("is-sent");
     });
-    $("#in-refresh").addEventListener("click", loadIntake);
-    $("#in-list").addEventListener("click", async (e) => {
-      const c = e.target.closest("[data-copy]"), d = e.target.closest("[data-del]"), o = e.target.closest("[data-open]");
-      if (c) {
-        try { await navigator.clipboard.writeText(c.dataset.copy); c.textContent = "Copied"; } catch { c.previousElementSibling.select(); c.textContent = "Press Ctrl+C"; }
-      } else if (d) {
-        if (!confirm("Delete this form? Anything the patient wrote is removed from this computer.")) return;
-        await fetch("/api/intake/" + encodeURIComponent(d.dataset.del), { method: "DELETE" });
-        loadIntake();
-      } else if (o) {
-        const it = inItems.find((x) => x.token === o.dataset.open);
-        if (it) openInAnalyzer(it.text);
-      }
+    $("#reply-copy").addEventListener("click", async (e) => {
+      try { await navigator.clipboard.writeText(box.value); e.target.textContent = "Copied"; } catch { box.select(); e.target.textContent = "Press Ctrl+C"; }
+      setTimeout(() => { e.target.textContent = "Copy reply"; }, 1800);
     });
+  }
+
+  /* ------------------------------------------------------------ dashboard */
+  const DB_LEVEL = { routine: "Routine", attention: "Needs attention", urgent: "See soon", emergency: "Urgent care" };
+
+  function dbBars(rows, cls = "") {
+    const max = Math.max(1, ...rows.map((x) => x.count));
+    if (!rows.length) return '<p class="muted">Nothing yet.</p>';
+    return `<ul class="db-bars">${rows.map((x) => `<li class="${cls || (x.level ? "lvl-" + x.level : "")}"><span class="db-name">${esc(cap(x.label || x.name || DB_LEVEL[x.level]))}</span><span class="db-track"><i style="width:${Math.round((x.count / max) * 100)}%"></i></span><b>${x.count}</b></li>`).join("")}</ul>`;
+  }
+  function dbRender(s) {
+    if (!s.total) { $("#db-out").innerHTML = '<div class="empty"><p>No notes yet. Analyse a text on the Analyzer page and the summary will appear here.</p></div>'; return; }
+    $("#db-out").innerHTML = `
+      <div class="cards db-cards">
+        <div class="metric"><div class="num">${s.total}</div><div class="lab">notes analysed</div></div>
+        <div class="metric"><div class="num">${s.attention_soon}</div><div class="lab">needed a doctor soon or urgent care</div></div>
+        <div class="metric"><div class="num">${s.avg_symptoms}</div><div class="lab">symptoms per note, on average</div></div>
+        <div class="metric"><div class="num">${s.languages.length}</div><div class="lab">input languages seen</div></div>
+      </div>
+      <div class="db-grid">
+        <div class="db-card"><h3>Most common symptoms</h3>${dbBars(s.top_symptoms)}</div>
+        <div class="db-card"><h3>How urgent</h3>${dbBars(s.by_level.map((x) => ({ ...x, name: DB_LEVEL[x.level] })))}</div>
+        <div class="db-card"><h3>Input language</h3>${dbBars(s.languages)}</div>
+        <div class="db-card"><h3>Red flags raised</h3>${dbBars(s.top_flags)}</div>
+      </div>`;
+  }
+  let dbTimer = null;
+  async function loadDashboard() {
+    clearInterval(dbTimer);
+    try { dbRender(await (await fetch("/api/stats")).json()); }
+    catch { $("#db-out").innerHTML = '<div class="error" role="alert">Could not load the insights.</div>'; }
+    // keeps itself up to date while the page is open
+    dbTimer = setInterval(() => { if ($("#view-dashboard").hidden) clearInterval(dbTimer); else loadDashboard(); }, 10000);
   }
 
   /* ------------------------------------------------------------ side menu hide / show */
@@ -947,14 +666,13 @@
     }));
     textEl.addEventListener("input", () => ($("#count").textContent = `${textEl.value.length} / 5000`));
     textEl.addEventListener("keydown", (e) => {
-      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") analyze();
+      if ((e.ctrlKey || e.metaKey) && e.key === "Enter") analyze(true);
     });
-    analyzeBtn.addEventListener("click", analyze);
+    analyzeBtn.addEventListener("click", () => analyze(true));
     $("#clear").addEventListener("click", () => {
       textEl.value = "";
       $("#count").textContent = "0 / 5000";
-      markedWrap.hidden = true;
-      outEl.innerHTML = '<div class="empty"><p>The structured note appears here.</p></div>';
+      resetResult();
       textEl.focus();
     });
 
@@ -974,7 +692,7 @@
         lastRandom = c.id;
         textEl.value = c.text;
         $("#count").textContent = `${textEl.value.length} / 5000`;
-        analyze();
+        resetResult();
       } catch { /* keep current text */ }
     }
     $("#example-buttons").addEventListener("click", (ev) => {
@@ -984,7 +702,7 @@
       if (!b) return;
       textEl.value = examples[+b.dataset.i].text;
       $("#count").textContent = `${textEl.value.length} / 5000`;
-      analyze();
+      resetResult();
     });
 
     bindLinking();
@@ -993,17 +711,13 @@
     bindReportDialog();
     bindLive();
     bindNavToggle();
-    bindQueue();
-    bindIntake();
     bindWelcome();
     bindSpotlight();
-    bindLive();
     bindMic();
     routeFromHash();
     if (examples.length && !textEl.value) {
       textEl.value = examples[0].text;
       $("#count").textContent = `${textEl.value.length} / 5000`;
-      analyze();
     }
   }
   init();
