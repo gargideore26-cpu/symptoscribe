@@ -15,7 +15,7 @@
   const cap = (s) => (s ? s.charAt(0).toUpperCase() + s.slice(1) : s);
 
   /* ------------------------------------------------------------ views */
-  const VIEWS = ["welcome", "home", "analyzer", "dashboard", "evaluation"];
+  const VIEWS = ["welcome", "home", "analyzer", "intake", "dashboard", "evaluation"];
   let accuracyLoaded = false;
 
   function showView(name) {
@@ -28,6 +28,7 @@
       if (a.dataset.view === name) a.setAttribute("aria-current", "page");
       else a.removeAttribute("aria-current");
     });
+    if (name === "intake") loadIntake();
     if (name === "dashboard") loadDashboard();
     if (name === "evaluation") {
       if (!accuracyLoaded) loadAccuracy();
@@ -177,16 +178,6 @@
     const vit = (r.vitals && r.vitals.length)
       ? `<div class="block"><h3>Vital signs</h3><div class="vitals">${r.vitals.map((v) => `<div class="vital vs-${esc(v.status)}"><span class="v-label">${esc(v.label)}</span><span class="v-value">${esc(v.value)}<small>${esc(v.unit)}</small></span><span class="v-status">${esc(v.status === "normal" ? "Normal" : cap(v.status))}</span>${v.note ? `<small class="v-note">${esc(v.note)}</small>` : ""}</div>`).join("")}</div></div>`
       : "";
-    const chk = (r.checklist && r.checklist.length)
-      ? `<div class="block"><h3>Still to ask <span class="chk-count" id="chk-count"></span></h3><ul class="checklist">${r.checklist.map((c, i) => `<li class="${c.done ? "is-done" : ""}"><label><input type="checkbox" data-i="${i}"${c.done ? " checked disabled" : ""}><span>${esc(c.label)}</span>${c.done ? "<small>mentioned</small>" : ""}</label></li>`).join("")}</ul></div>`
-      : "";
-    const replyDefault = (r.language && ((r.language.parts || []).includes("Marathi") ? "mr" : (r.language.parts || []).includes("Hindi") ? "hi" : "en")) || "en";
-    const reply = r.symptoms.some((s) => s.subject === "patient")
-      ? `<div class="block reply"><h3>Reply to the patient</h3>
-          <div class="reply-bar"><label>Language <select id="reply-lang" aria-label="Reply language"><option value="en">English</option><option value="hi">हिन्दी</option><option value="mr">मराठी</option></select></label><button class="btn small" type="button" id="reply-draft">Draft reply</button></div>
-          <textarea id="reply-text" rows="10" hidden aria-label="Reply to the patient"></textarea>
-          <div class="reply-actions" id="reply-actions" hidden><button class="btn small primary" type="button" id="reply-send">Send reply</button><button class="btn small" type="button" id="reply-copy">Copy reply</button></div></div>`
-      : "";
     outEl.innerHTML = `<article class="result">
       <div class="verdict lvl-${esc(r.attention_level)}">
         <div class="verdict-text">${esc(title)}<small>${esc(sub)}</small></div>
@@ -199,15 +190,8 @@
       ${flags}
       ${vit}
       <div class="block"><h3>Structured symptoms</h3>${tableHtml(r.symptoms)}</div>
-      ${chk}
-      ${reply}
     </article>`;
     renderMarked(r.text, r.highlights);
-    const boxes = outEl.querySelectorAll(".checklist input");
-    const countChk = () => { const c = $("#chk-count"); if (c) c.textContent = `${[...boxes].filter((b) => b.checked).length} of ${boxes.length} covered`; };
-    boxes.forEach((b) => b.addEventListener("change", () => { b.closest("li").classList.toggle("is-done", b.checked); countChk(); }));
-    countChk();
-    bindReply(r, replyDefault);
     $("#copy-note").addEventListener("click", copyNote);
     $("#dl-report").addEventListener("click", downloadReport);
     if (animate) {
@@ -256,7 +240,7 @@
       if (el.contains(note)) { el.style.animationDelay = "0.3s"; return; }
       el.style.animationDelay = `${t.toFixed(2)}s`;
       el.querySelectorAll("tbody tr").forEach((tr, n) => { tr.style.animationDelay = `${(t + 0.25 + n * 0.09).toFixed(2)}s`; });
-      el.querySelectorAll(".vital, .flags li, .checklist li").forEach((x, n) => { x.style.animationDelay = `${(t + 0.2 + n * 0.1).toFixed(2)}s`; });
+      el.querySelectorAll(".vital, .flags li").forEach((x, n) => { x.style.animationDelay = `${(t + 0.2 + n * 0.1).toFixed(2)}s`; });
       t += 0.55;
     });
   }
@@ -564,41 +548,6 @@
     });
   }
 
-  /* ------------------------------------------------------------ reply to the patient */
-  function bindReply(r, def) {
-    const sel = $("#reply-lang"), box = $("#reply-text"), acts = $("#reply-actions"), btn = $("#reply-draft");
-    if (!sel) return;
-    sel.value = def;
-    let edited = false;
-    async function draft() {
-      btn.disabled = true;
-      try {
-        const res = await fetch("/api/reply", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ text: r.text, lang: sel.value }) });
-        const d = await res.json();
-        if (!res.ok) throw new Error(d.error || "Could not draft a reply.");
-        box.value = d.message; box.hidden = false; acts.hidden = false; edited = false;
-        resetSend();
-        btn.textContent = "Draft again";
-      } catch (e) {
-        box.value = e.message; box.hidden = false;
-      } finally { btn.disabled = false; }
-    }
-    btn.addEventListener("click", () => { if (edited && !confirm("Replace your edits with a new draft?")) return; draft(); });
-    sel.addEventListener("change", () => { if (!box.hidden && (!edited || confirm("Replace your edits with a new draft?"))) draft(); else if (edited) sel.value = sel.dataset.last || sel.value; sel.dataset.last = sel.value; });
-    sel.dataset.last = sel.value;
-    box.addEventListener("input", () => { edited = true; resetSend(); });
-    // demo only: marks the reply as sent, nothing leaves the page
-    const sendBtn = $("#reply-send");
-    function resetSend() { sendBtn.disabled = false; sendBtn.textContent = "Send reply"; sendBtn.classList.remove("is-sent"); }
-    sendBtn.addEventListener("click", () => {
-      sendBtn.disabled = true; sendBtn.textContent = "✓ Sent"; sendBtn.classList.add("is-sent");
-    });
-    $("#reply-copy").addEventListener("click", async (e) => {
-      try { await navigator.clipboard.writeText(box.value); e.target.textContent = "Copied"; } catch { box.select(); e.target.textContent = "Press Ctrl+C"; }
-      setTimeout(() => { e.target.textContent = "Copy reply"; }, 1800);
-    });
-  }
-
   /* ------------------------------------------------------------ dashboard */
   const DB_LEVEL = { routine: "Routine", attention: "Needs attention", urgent: "See soon", emergency: "Urgent care" };
 
@@ -630,6 +579,77 @@
     catch { $("#db-out").innerHTML = '<div class="error" role="alert">Could not load the insights.</div>'; }
     // keeps itself up to date while the page is open
     dbTimer = setInterval(() => { if ($("#view-dashboard").hidden) clearInterval(dbTimer); else loadDashboard(); }, 10000);
+  }
+
+  function openInAnalyzer(text) {
+    textEl.value = text;
+    location.hash = "#analyzer";
+    analyze(true);
+  }
+
+  /* ------------------------------------------------------------ patient intake */
+  let inItems = [], inLan = "", inTimer = null;
+  const LVL_SHORT = { routine: "Routine", attention: "Needs attention", urgent: "See soon", emergency: "Urgent care" };
+
+  function inBase() {
+    const local = ["localhost", "127.0.0.1", "[::1]"].includes(location.hostname);
+    return local && inLan ? `http://${inLan}${location.port ? ":" + location.port : ""}` : location.origin;
+  }
+  function inRender() {
+    const base = inBase();
+    $("#in-hint").textContent = ["localhost", "127.0.0.1"].includes(location.hostname) && !inLan
+      ? "These links open on this computer only. To let a patient on the same Wi-Fi open one, start the app with HOST=0.0.0.0."
+      : "";
+    if (!inItems.length) { $("#in-list").innerHTML = '<div class="empty"><p>No links yet. Create one above.</p></div>'; return; }
+    $("#in-list").innerHTML = inItems.map((it) => {
+      const when = new Date((it.submitted || it.created) * 1000).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
+      if (!it.submitted) {
+        const url = base + "/p/" + it.token;
+        return `<div class="in-card"><div class="in-top"><b>${esc(it.label || "Patient link")}</b><span class="in-state wait">Waiting for the patient</span></div>
+          <div class="in-link"><input type="text" readonly value="${esc(url)}" aria-label="Patient link"><button class="btn small" type="button" data-copy="${esc(url)}">Copy link</button><button class="btn small" type="button" data-del="${esc(it.token)}">Delete</button></div>
+          <small class="muted">Created ${esc(when)}</small></div>`;
+      }
+      return `<div class="in-card lvl-${esc(it.level)}"><div class="in-top"><b>${esc(it.name || it.label || "Patient")}</b><span class="in-state got">Received</span><span class="q-level">${esc(LVL_SHORT[it.level])}</span></div>
+        <p class="q-flag">${it.top_flag ? esc(it.top_flag) : "No red flags found."}</p>
+        <div class="q-chips">${it.symptoms.map((s) => `<span>${esc(s)}</span>`).join("")}</div>
+        <p class="in-text">${esc(it.text.length > 220 ? it.text.slice(0, 220) + "…" : it.text)}</p>
+        <div class="in-link"><button class="btn small primary" type="button" data-open="${esc(it.token)}">Open note</button><button class="btn small" type="button" data-del="${esc(it.token)}">Delete</button><small class="muted">Received ${esc(when)}</small></div></div>`;
+    }).join("");
+  }
+  async function loadIntake() {
+    clearInterval(inTimer);
+    try {
+      const d = await (await fetch("/api/intake")).json();
+      inItems = d.items; inLan = d.lan_ip || "";
+      const typing = document.activeElement && document.activeElement.closest && document.activeElement.closest("#in-list");
+      if (!typing) inRender();
+    } catch { $("#in-list").innerHTML = '<div class="error" role="alert">Could not load the forms.</div>'; }
+    inTimer = setInterval(() => { if ($("#view-intake").hidden) clearInterval(inTimer); else loadIntake(); }, 8000);
+  }
+  function bindIntake() {
+    $("#in-create").addEventListener("click", async () => {
+      const btn = $("#in-create");
+      btn.disabled = true;
+      try {
+        await fetch("/api/intake", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ label: $("#in-label").value }) });
+        $("#in-label").value = "";
+        await loadIntake();
+      } finally { btn.disabled = false; }
+    });
+    $("#in-refresh").addEventListener("click", loadIntake);
+    $("#in-list").addEventListener("click", async (e) => {
+      const c = e.target.closest("[data-copy]"), d = e.target.closest("[data-del]"), o = e.target.closest("[data-open]");
+      if (c) {
+        try { await navigator.clipboard.writeText(c.dataset.copy); c.textContent = "Copied"; } catch { c.previousElementSibling.select(); c.textContent = "Press Ctrl+C"; }
+      } else if (d) {
+        if (!confirm("Delete this form? Anything the patient wrote is removed from this computer.")) return;
+        await fetch("/api/intake/" + encodeURIComponent(d.dataset.del), { method: "DELETE" });
+        loadIntake();
+      } else if (o) {
+        const it = inItems.find((x) => x.token === o.dataset.open);
+        if (it) openInAnalyzer(it.text);
+      }
+    });
   }
 
   /* ------------------------------------------------------------ side menu hide / show */
@@ -711,6 +731,7 @@
     bindReportDialog();
     bindLive();
     bindNavToggle();
+    bindIntake();
     bindWelcome();
     bindSpotlight();
     bindMic();

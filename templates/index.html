@@ -31,6 +31,7 @@
     <nav aria-label="Sections" id="nav">
       <a href="#home" data-view="home">Home</a>
       <a href="#analyzer" data-view="analyzer">Analyzer</a>
+      <a href="#intake" data-view="intake">Check in</a>
       <a href="#dashboard" data-view="dashboard">Insights</a>
       <a class="nav-sub nav-first" href="#evaluation" data-view="evaluation">How does it work</a>
     </nav>
@@ -121,6 +122,38 @@
 
     </section>
 
+    <!-- ====================================================== PATIENT INTAKE -->
+    <section id="view-intake" class="view" hidden>
+      <div class="window">
+        <div class="win-bar"><i></i><i></i><i></i><span>SymptoScribe · Check in</span></div>
+        <h2 class="section-title">Check in</h2>
+        <p class="lede">Make a link and send it to the patient. They write or speak how they feel at home, and the note is ready here before the appointment.</p>
+        <div class="in-make">
+          <label class="field-label" for="in-label">Patient name or note (optional)</label>
+          <div class="in-make-row">
+            <input id="in-label" type="text" maxlength="60" placeholder="For example: Asha, Tuesday 4 pm" autocomplete="off">
+            <button id="in-create" class="btn primary" type="button">Create patient link</button>
+          </div>
+          <p id="in-hint" class="muted in-hint"></p>
+        </div>
+        <div class="in-head"><h3>Forms</h3><button id="in-refresh" class="btn small" type="button">Refresh</button></div>
+        <div id="in-list" aria-live="polite"></div>
+        <p class="muted in-note">There is no login in this prototype: anyone who can open this site can read the forms. Patient text is saved on this computer until you delete it.</p>
+      </div>
+    </section>
+
+    <section id="view-evaluation" class="view prose" hidden>
+      <div class="page-head"><span class="badge">✦ Evaluation</span>
+      <h1>How well does it work?</h1>
+      <p class="lede">The engine is run over a public dataset of 1,200 patient symptom descriptions. This page shows what it found. A small hand-marked set is kept only to check accuracy.</p></div>
+      <div id="dataset-body"><p class="muted">Reading the dataset…</p></div>
+      <details class="card accuracy">
+        <summary>Accuracy check on a small hand-marked set (91 texts)</summary>
+        <p class="muted acc-note">The public dataset has no marked answers for duration or severity, so accuracy scores come from this small set. Precision is how many of its answers were right, recall is how many of the true answers it found, and F1 balances both.</p>
+        <div id="eval-body"><p class="muted">Loading the evaluation…</p></div>
+      </details>
+    </section>
+
     <!-- ====================================================== DASHBOARD -->
     <section id="view-dashboard" class="view" hidden>
       <div class="window">
@@ -142,7 +175,7 @@
         <li><h2>Decide the status</h2><p>Negation rules tell whether each symptom is present, denied ("no fever"), unsure, from the past, or about someone else.</p></li>
         <li><h2>Attach the details</h2><p>Since when, how severe, getting better or worse, where it hurts, and what triggers it. Vital signs such as blood pressure and pulse are read too.</p></li>
         <li><h2>Check for red flags</h2><p>Simple rules, including age and pregnancy, raise a warning with advice when something should not wait.</p></li>
-        <li><h2>Write the note</h2><p>A template turns everything into the doctor's note, the "still to ask" checklist and a draft reply to the patient.</p></li>
+        <li><h2>Write the note</h2><p>A template turns everything into the note for the doctor, with the red flags, vital signs and a table of symptoms.</p></li>
       </ol>
 
       <div class="card">

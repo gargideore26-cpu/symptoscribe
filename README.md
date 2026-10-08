@@ -53,9 +53,9 @@ symptoscribe/
     └── evaluate.py         precision / recall / F1 and error list
 ```
 
-**Still to ask** checklist under each note (age, allergies, medicines, existing conditions, pregnancy status, vitals, and any symptom missing a duration or severity; ticked automatically when the patient already said it). 
+**Insights** page: counts over the notes analysed (common symptoms, urgency, language, red flags); only counts are kept in `data/stats.json`, never the patient's words, and it updates itself while the page is open.
 
-**Reply to the patient** (Analyzer): drafts a short message in English, Hindi or Marathi from the note (what was found, advice by urgency, what is still to ask); the doctor edits it, and nothing is sent. The Hindi and Marathi wording should be checked by a native speaker. **Insights** page: counts over the notes analysed (common symptoms, urgency, language, red flags); only counts are kept in `data/stats.json`, never the patient's words, and it updates itself while the page is open.
+**Check in** page: the doctor makes a link (`/p/<token>`), the patient opens it on their own phone, writes or speaks their symptoms (English, Hinglish, Hindi or Marathi) and presses *Send to my doctor*, and the analysed note appears in the doctor's list (urgency, top red flag, symptoms, with *Open note* to see the full review). Each link works once. Forms are saved in `data/intake.json` (gitignored) until the doctor deletes them. This is a demo for one computer: there is **no login** and the saved forms are not encrypted, so anyone who can open the site can read them. Start with `HOST=0.0.0.0` to let a phone on the same Wi-Fi reach it, and use only made-up data.
 
 Extras: **age-aware red flags** (fever in a baby or an older adult, dehydration risk at the extremes of age, bleeding and other warning signs in pregnancy, each flag showing why it fired) and **vital signs** (BP, pulse, SpO2, breathing rate, blood sugar, weight, temperature) that are extracted, marked normal, low, high or critical, and can raise flags. Sentences may **mix languages** (for example `mujhe fever hai aur पेट में दर्द`); the result shows a Mixed label with its parts.  The PDF report can carry typed-in patient name, age, date and doctor, which are never stored.
 
@@ -128,5 +128,5 @@ Each of these is a good extension task.
 * **Not a diagnostic tool.** It organises what the patient wrote, and names no disease.
 * The red flags are coarse rules for attention, not clinical triage. They err on the side of caution.
 * A missing symptom does not mean the patient did not mention it. The marked-up text is there so that humans can check.
-* **Privacy:** the Analyzer page processes text in memory and does not store it. The Insights page keeps counts only (symptom names, urgency, language), never the text. Do not use real patient data, names or phone numbers in demos.
+* **Privacy:** the Analyzer page processes text in memory and does not store it. The Insights page keeps counts only (symptom names, urgency, language), never the text. The exception is **Check in**: a form a patient sends is saved on the computer until the doctor deletes it. Do not use real patient data, names or phone numbers in demos.
 * Self-harm language triggers a message with the Tele-MANAS number (14416 / 1-800-891-4416, India).

@@ -369,22 +369,6 @@ class MixedLanguage(unittest.TestCase):
         self.assertEqual(r, {("fever", "present"), ("cough", "absent")})
 
 
-class Checklist(unittest.TestCase):
-    def test_marks_what_was_already_said(self):
-        r = analyze("I am a 30 year old man with fever for 2 days. Allergic to penicillin. Taking paracetamol.")
-        done = {c["id"]: c["done"] for c in r["checklist"]}
-        self.assertTrue(done["duration"] and done["age"] and done["allergies"] and done["medicines"])
-        self.assertFalse(done["severity"])
-        self.assertNotIn("pregnancy", done)
-
-    def test_pregnancy_asked_for_women_only(self):
-        ids = {c["id"] for c in analyze("30 year old woman with headache")["checklist"]}
-        self.assertIn("pregnancy", ids)
-
-    def test_empty_when_no_symptoms(self):
-        self.assertEqual(analyze("hello")["checklist"], [])
-
-
 class WebApi(unittest.TestCase):
     def setUp(self):
         from app import create_app
@@ -440,7 +424,38 @@ class WebApi(unittest.TestCase):
 
 
 
-class ReplyAndDashboard(unittest.TestCase):
+class CheckIn(unittest.TestCase):
+    def setUp(self):
+        import os, tempfile
+        self.tmp = tempfile.TemporaryDirectory()
+        os.environ["INTAKE_FILE"] = os.path.join(self.tmp.name, "intake.json")
+        from app import create_app
+        self.client = create_app().test_client()
+
+    def tearDown(self):
+        import os
+        os.environ.pop("INTAKE_FILE", None)
+        self.tmp.cleanup()
+
+    def test_intake_round_trip(self):
+        tok = self.client.post("/api/intake", json={"label": "Asha"}).get_json()["token"]
+        self.assertEqual(self.client.get(f"/p/{tok}").status_code, 200)
+        self.assertFalse(self.client.get("/api/intake").get_json()["items"][0]["submitted"])
+        r = self.client.post(f"/api/intake/{tok}/submit", json={"name": "Asha", "text": "fever for 3 days, no cough"})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(self.client.post(f"/api/intake/{tok}/submit", json={"text": "again"}).status_code, 409)
+        item = self.client.get("/api/intake").get_json()["items"][0]
+        self.assertTrue(item["submitted"])
+        self.assertIn("fever", item["symptoms"])
+        self.assertEqual(self.client.delete(f"/api/intake/{tok}").status_code, 200)
+        self.assertEqual(self.client.get("/api/intake").get_json()["items"], [])
+
+    def test_bad_token(self):
+        self.assertEqual(self.client.get("/p/nope").status_code, 404)
+        self.assertEqual(self.client.post("/api/intake/nope/submit", json={"text": "fever"}).status_code, 404)
+
+
+class Insights(unittest.TestCase):
     def setUp(self):
         import os, tempfile
         self.tmp = tempfile.TemporaryDirectory()
@@ -453,18 +468,6 @@ class ReplyAndDashboard(unittest.TestCase):
         import os
         os.environ.pop("STATS_FILE", None)
         self.tmp.cleanup()
-
-    def test_reply_in_three_languages(self):
-        for lang, word in (("en", "fever"), ("hi", "बुखार"), ("mr", "ताप")):
-            r = self.client.post("/api/reply", json={"text": "fever for 3 days, no cough", "lang": lang})
-            self.assertEqual(r.status_code, 200)
-            self.assertIn(word, r.get_json()["message"])
-
-    def test_reply_advice_follows_urgency(self):
-        m = self.client.post("/api/reply", json={"text": "severe chest pain and breathlessness since morning", "lang": "en"}).get_json()["message"]
-        self.assertIn("nearest hospital", m)
-        self.assertEqual(self.client.post("/api/reply", json={"text": "fever", "lang": "fr"}).status_code, 400)
-        self.assertEqual(self.client.post("/api/reply", json={"text": " "}).status_code, 400)
 
     def test_stats_only_when_recorded_and_once(self):
         post = lambda body: self.client.post("/api/analyze", json=body)
