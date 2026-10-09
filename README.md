@@ -18,7 +18,7 @@ It also writes a one-paragraph note and lists any red flags. The patient's text 
 
 ## What is on the website
 
-- **Analyzer**: paste or speak the patient's words, press Analyze, and read the review. You can download it as a PDF report.
+- **Analyzer**: paste or type the patient's words, press Analyze, and read the review. You can download it as a PDF report.
 - **Check in**: the doctor makes a link and sends it to a patient. The patient opens it on their phone, writes their symptoms, and sends them. The note then shows up in the doctor's list.
 - **Insights**: simple counts of the notes analysed (common symptoms, how urgent, which language). It stores counts only, never the patient's words.
 - **How does it work**: a short explanation of the steps.

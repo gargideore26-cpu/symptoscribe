@@ -81,14 +81,13 @@
       <div class="workspace">
         <div class="col-in">
           <h2 class="section-title">Enter the patient's symptoms</h2>
-          <p class="lede">Type or dictate what the patient tells you. We find the symptoms, when they started, how bad they are, and what's not wrong.</p>
+          <p class="lede">Type what the patient tells you. We find the symptoms, when they started, how bad they are, and what's not wrong.</p>
 
           <label class="field-label" for="text">Patient's description</label>
-          <textarea id="text" rows="7" maxlength="5000" spellcheck="false" placeholder="Paste or dictate what the patient says, in English, Hinglish, हिन्दी or मराठी. For example: I have had a fever and a sore throat since yesterday, no cough."></textarea>
+          <textarea id="text" rows="7" maxlength="5000" spellcheck="false" placeholder="Paste or type what the patient says, in English, Hinglish, हिन्दी or मराठी. For example: I have had a fever and a sore throat since yesterday, no cough."></textarea>
           <div class="actions">
             <button id="analyze" class="btn primary" type="button">Analyze text</button>
             <button id="clear" class="btn" type="button">Clear</button>
-            <button id="mic" class="btn" type="button" aria-pressed="false" hidden>🎤 Speak</button>
             <div class="examples dd" id="examples-dd">
               <button type="button" class="dd-toggle" id="dd-toggle" aria-haspopup="listbox" aria-expanded="false" aria-controls="example-buttons">
               <span>Try an example</span><span class="dd-caret" aria-hidden="true">▾</span>
@@ -97,9 +96,6 @@
           </div>
           </div>
           <div class="options-row" aria-label="Options">
-            <label class="opt" id="mic-opt" hidden>Dictation language
-              <select id="mic-lang" class="mic-lang"><option value="en-IN">English</option><option value="hi-IN">हिन्दी</option><option value="mr-IN">मराठी</option></select>
-            </label>
             <label class="live"><input type="checkbox" id="live" checked> Live analysis</label>
             <span id="count" class="count" aria-hidden="true">0 / 5000</span>
           </div>
@@ -141,17 +137,6 @@
       </div>
     </section>
 
-    <section id="view-evaluation" class="view prose" hidden>
-      <div class="page-head"><span class="badge">✦ Evaluation</span>
-      <h1>How well does it work?</h1>
-      <p class="lede">The engine is run over a public dataset of 1,200 patient symptom descriptions. This page shows what it found. A small hand-marked set is kept only to check accuracy.</p></div>
-      <div id="dataset-body"><p class="muted">Reading the dataset…</p></div>
-      <details class="card accuracy">
-        <summary>Accuracy check on a small hand-marked set (91 texts)</summary>
-        <p class="muted acc-note">The public dataset has no marked answers for duration or severity, so accuracy scores come from this small set. Precision is how many of its answers were right, recall is how many of the true answers it found, and F1 balances both.</p>
-        <div id="eval-body"><p class="muted">Loading the evaluation…</p></div>
-      </details>
-    </section>
 
     <!-- ====================================================== DASHBOARD -->
     <section id="view-dashboard" class="view" hidden>
@@ -163,25 +148,28 @@
       </div>
     </section>
 
-    <section id="view-evaluation" class="view prose" hidden>
-      <div class="page-head"><span class="badge">✦ How it works</span>
-      <h1>How does it work?</h1>
-      <p class="lede">SymptoScribe reads what the patient wrote using simple, explainable rules. It never names a disease.</p></div>
+    <section id="view-evaluation" class="view" hidden>
+      <div class="window">
+        <div class="win-bar"><i></i><i></i><i></i><span>SymptoScribe · How it works</span></div>
+        <div class="tl-head"><span class="tl-pill"><i></i>How it works</span>
+          <h2 class="section-title">How does it work?</h2>
+          <p class="tl-sub">From the patient's own words to a note the doctor can check.</p></div>
+        <ol class="tl" aria-label="How SymptoScribe turns a patient's text into a note">
+          <li class="tl-row is-end is-first"><div class="tl-side tl-g"><div class="tl-tile"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 3h9l4 4v14H6z"/><path d="M14 3v5h5"/><path d="M9 13h7M9 17h5"/></svg></div><span class="tl-num">01</span></div><div class="tl-axis"><i></i></div><div class="tl-side tl-t"><b>Patient's text</b><span>Typed in, or sent by the patient</span></div></li>
+          <li class="tl-row"><div class="tl-side tl-t"><b>Clean the text</b><span>Split into words and fix spelling</span></div><div class="tl-axis"><i></i></div><div class="tl-side tl-g"><span class="tl-num">02</span><div class="tl-tile"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h16M4 12h10M4 18h13"/><path d="M18 14l1.2 2.3L21.5 17.5l-2.3 1.2L18 21l-1.2-2.3L14.5 17.5l2.3-1.2z"/></svg></div></div></li>
+          <li class="tl-row"><div class="tl-side tl-g"><div class="tl-tile"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5 5"/></svg></div><span class="tl-num">03</span></div><div class="tl-axis"><i></i></div><div class="tl-side tl-t"><b>Find symptoms</b><span>Match against a list of 40</span></div></li>
+          <li class="tl-row"><div class="tl-side tl-t"><b>Decide status</b><span>Present, denied, unsure or past</span></div><div class="tl-axis"><i></i></div><div class="tl-side tl-g"><span class="tl-num">04</span><div class="tl-tile"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="8.5"/><path d="M8 12.3l2.6 2.6L16 9.5"/></svg></div></div></li>
+          <li class="tl-row"><div class="tl-side tl-g"><div class="tl-tile"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h16M4 16h16"/><circle cx="9" cy="8" r="2.2" fill="var(--bg,#111)"/><circle cx="15" cy="16" r="2.2" fill="var(--bg,#111)"/></svg></div><span class="tl-num">05</span></div><div class="tl-axis"><i></i></div><div class="tl-side tl-t"><b>Add details</b><span>Since when, how bad, vital signs</span></div></li>
+          <li class="tl-row"><div class="tl-side tl-t"><b>Check red flags</b><span>Simple rules, including age and pregnancy</span></div><div class="tl-axis"><i></i></div><div class="tl-side tl-g"><span class="tl-num">06</span><div class="tl-tile"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 21V4"/><path d="M6 5h11l-2.5 4L17 13H6"/></svg></div></div></li>
+          <li class="tl-row is-end"><div class="tl-side tl-g"><div class="tl-tile"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1"/><path d="M8.5 10h7M8.5 14h7M8.5 18h4"/></svg></div><span class="tl-num">07</span></div><div class="tl-axis"><i></i></div><div class="tl-side tl-t"><b>Doctor's note</b><span>A short note the doctor can check</span></div></li>
+        </ol>
 
-      <ol class="steps">
-        <li><h2>Clean the text</h2><p>The text is split into sentences and words, common spelling slips are fixed, and Hindi and Marathi words are matched to the same vocabulary as English.</p></li>
-        <li><h2>Find the symptoms</h2><p>Words and phrases are matched against a list of 40 symptoms written in English, Hinglish, Hindi and Marathi.</p></li>
-        <li><h2>Decide the status</h2><p>Negation rules tell whether each symptom is present, denied ("no fever"), unsure, from the past, or about someone else.</p></li>
-        <li><h2>Attach the details</h2><p>Since when, how severe, getting better or worse, where it hurts, and what triggers it. Vital signs such as blood pressure and pulse are read too.</p></li>
-        <li><h2>Check for red flags</h2><p>Simple rules, including age and pregnancy, raise a warning with advice when something should not wait.</p></li>
-        <li><h2>Write the note</h2><p>A template turns everything into the note for the doctor, with the red flags, vital signs and a table of symptoms.</p></li>
-      </ol>
-
-      <div class="card">
-        <h2 class="plain">Why rules, and how well they work</h2>
-        <p>Every result can be traced to the words it came from, nothing needs training data, and the same text always gives the same answer.</p>
-        <p id="accuracy-line" class="muted"></p>
-        <p class="muted">Example texts come from the public <a href="https://www.kaggle.com/datasets/niyarrbarman/symptom2disease" target="_blank" rel="noopener">Symptom2Disease</a> dataset on Kaggle.</p>
+        <div class="flow-example">
+          <small>Example</small>
+          <p class="flow-quote">&ldquo;No fever, but a sore throat since Sunday.&rdquo;</p>
+          <div class="flow-chips"><span class="on"><b>Sore throat</b> present, since Sunday</span><span class="off"><b>Fever</b> denied</span></div>
+        </div>
+        <p class="flow-safe">It supports the doctor and never diagnoses.</p>
       </div>
     </section>
 

@@ -16,7 +16,6 @@
 
   /* ------------------------------------------------------------ views */
   const VIEWS = ["welcome", "home", "analyzer", "intake", "dashboard", "evaluation"];
-  let accuracyLoaded = false;
 
   function showView(name) {
     if (!VIEWS.includes(name)) name = "home";
@@ -30,9 +29,6 @@
     });
     if (name === "intake") loadIntake();
     if (name === "dashboard") loadDashboard();
-    if (name === "evaluation") {
-      if (!accuracyLoaded) loadAccuracy();
-    }
     window.scrollTo(0, 0);
   }
   function routeFromHash() {
@@ -374,17 +370,6 @@
     });
   }
 
-  /* ------------------------------------------------------------ how it works: one line of accuracy */
-  async function loadAccuracy() {
-    const line = $("#accuracy-line");
-    try {
-      const e = await (await fetch("/api/evaluation")).json();
-      const pct = (x) => Math.round(x * 100) + "%";
-      accuracyLoaded = true;
-      line.textContent = `On ${e.dataset.cases} texts marked by hand, it finds ${pct(e.overall.detection.f1)} of the symptoms correctly (${pct(e.by_set.challenge.detection.f1)} on the hardest, unseen set). The author marked these texts, so real patient text will score lower.`;
-    } catch { line.textContent = ""; }
-  }
-
   /* ------------------------------------------------------------ linking text <-> table */
   function focusSym(sym, on) {
     if (!sym) return;
@@ -413,7 +398,7 @@
     });
   }
 
-  /* ------------------------------------------------------------ live analysis + voice */
+  /* ------------------------------------------------------------ live analysis */
   let liveTimer = null;
   function bindLive() {
     textEl.addEventListener("input", () => {
@@ -423,38 +408,6 @@
       liveTimer = setTimeout(analyze, 600);
     });
   }
-  function bindMic() {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const mic = $("#mic");
-    if (!SR) return;
-    mic.hidden = false;
-    $("#mic-opt").hidden = false;
-    const rec = new SR();
-    rec.continuous = true;
-    rec.interimResults = false;
-    rec.lang = "en-IN";
-    let on = false;
-    const set = (v) => {
-      on = v;
-      mic.setAttribute("aria-pressed", v);
-      mic.classList.toggle("recording", v);
-      mic.textContent = v ? "⏺ Listening… (click to stop)" : "🎤 Speak";
-    };
-    rec.onresult = (e) => {
-      const chunk = Array.from(e.results).slice(e.resultIndex).map((r) => r[0].transcript).join(" ").trim();
-      if (!chunk) return;
-      textEl.value = (textEl.value.trim() + " " + chunk).trim();
-      $("#count").textContent = `${textEl.value.length} / 5000`;
-      analyze();
-    };
-    rec.onend = () => set(false);
-    rec.onerror = () => set(false);
-    mic.addEventListener("click", () => {
-      if (on) rec.stop();
-      else { try { rec.lang = $("#mic-lang").value; rec.start(); set(true); } catch { set(false); } }
-    });
-  }
-
   /* ------------------------------------------------------------ blobs follow the pointer */
   function bindBlobs() {
     const g = document.querySelector(".glow");
@@ -734,7 +687,6 @@
     bindIntake();
     bindWelcome();
     bindSpotlight();
-    bindMic();
     routeFromHash();
     if (examples.length && !textEl.value) {
       textEl.value = examples[0].text;
