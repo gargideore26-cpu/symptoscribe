@@ -530,6 +530,20 @@
     analyze(true);
   }
 
+  (function bindSteps() {
+    const items = [...document.querySelectorAll("#ps .ps-item")];
+    const open = (i) => items.forEach((el, k) => { el.classList.toggle("is-on", k === i); el.setAttribute("aria-expanded", k === i); });
+    items.forEach((el, i) => {
+      el.addEventListener("click", () => open(i));
+      el.addEventListener("keydown", (e) => {
+        if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(i); }
+        else if (e.key === "ArrowRight" || e.key === "ArrowDown") { e.preventDefault(); items[Math.min(i + 1, items.length - 1)].focus(); open(Math.min(i + 1, items.length - 1)); }
+        else if (e.key === "ArrowLeft" || e.key === "ArrowUp") { e.preventDefault(); items[Math.max(i - 1, 0)].focus(); open(Math.max(i - 1, 0)); }
+      });
+    });
+  })();
+  $("#walk-try").addEventListener("click", () => openInAnalyzer("No fever, but a sore throat since Sunday."));
+
   /* ------------------------------------------------------------ patient intake */
   let inItems = [], inLan = "", inTimer = null;
   const LVL_SHORT = { routine: "Routine", attention: "Needs attention", urgent: "See soon", emergency: "Urgent care" };
