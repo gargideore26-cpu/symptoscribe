@@ -1044,13 +1044,7 @@ svg.welcome-logo { display: block; width: 120px; height: 120px; margin-bottom: 3
 .tl-pill i { width: 7px; height: 7px; border-radius: 50%; background: var(--crimson); box-shadow: 0 0 10px var(--crimson); }
 .tl-head .section-title { margin: 18px 0 10px; font-size: clamp(32px, 4.2vw, 50px); letter-spacing: -.03em; }
 .tl-sub { margin: 0 auto; max-width: 46ch; color: var(--muted); font-size: 15.5px; line-height: 1.6; }
-.flow-example { max-width: 520px; margin: 44px auto 0; padding: 20px 24px; border-radius: 18px; border: 1px solid var(--line); background: rgba(255,255,255,.035); }
-.flow-example small { font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; color: #ff8a9d; }
-.flow-quote { margin: 8px 0 14px; font-size: 18px; font-style: italic; }
-.flow-safe { text-align: center; margin: 26px 0 6px; font-size: 14px; color: var(--muted); }
 :root[data-theme="light"] .tl-pill { background: rgba(27,18,23,.05); }
-:root[data-theme="light"] .flow-example { background: #fff; }
-:root[data-theme="light"] .flow-example small { color: #c81e3a; }
 
 /* how it works: a row of big step numbers, one open at a time */
 .ps-wrap { container-type: inline-size; margin-top: 46px; }
@@ -1075,8 +1069,5 @@ svg.welcome-logo { display: block; width: 120px; height: 120px; margin-bottom: 3
   .ps-n { min-width: 0; font-size: clamp(64px, 9cqw, 120px); }
   .ps-body { min-width: 230px; }
 }
-.flow-hint { margin: 0 0 16px; font-size: 13.5px; color: var(--muted); }
-.hbtn.solid.walk-try { display: block; margin: 0 auto; background: var(--crimson); border-color: var(--crimson); color: #fff; cursor: pointer; }
-.hbtn.solid.walk-try:hover { background: #ff3b5c; border-color: #ff3b5c; }
 :root[data-theme="light"] .ps-body small b { color: #c81e3a; }
 @media (prefers-reduced-motion: reduce) { .ps-item, .ps-n { transition: none; } .ps-item.is-on .ps-body { animation: none; } }

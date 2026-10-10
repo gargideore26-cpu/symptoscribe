@@ -532,7 +532,21 @@
 
   (function bindSteps() {
     const items = [...document.querySelectorAll("#ps .ps-item")];
-    const open = (i) => items.forEach((el, k) => { el.classList.toggle("is-on", k === i); el.setAttribute("aria-expanded", k === i); });
+    let cur = 0, paused = false, wasHidden = true;
+    const open = (i) => { cur = i; items.forEach((el, k) => { el.classList.toggle("is-on", k === i); el.setAttribute("aria-expanded", k === i); }); };
+    // plays the steps one after another while the page is on screen; hover or focus pauses it
+    if (!matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      setInterval(() => {
+        if ($("#view-evaluation").hidden) { wasHidden = true; return; }
+        if (wasHidden) { wasHidden = false; open(0); return; }
+        if (!paused) open((cur + 1) % items.length);
+      }, 2500);
+    }
+    const ps = $("#ps");
+    ps.addEventListener("mouseenter", () => { paused = true; });
+    ps.addEventListener("mouseleave", () => { paused = false; });
+    ps.addEventListener("focusin", () => { paused = true; });
+    ps.addEventListener("focusout", () => { paused = false; });
     items.forEach((el, i) => {
       el.addEventListener("click", () => open(i));
       el.addEventListener("keydown", (e) => {
@@ -542,7 +556,6 @@
       });
     });
   })();
-  $("#walk-try").addEventListener("click", () => openInAnalyzer("No fever, but a sore throat since Sunday."));
 
   /* ------------------------------------------------------------ patient intake */
   let inItems = [], inLan = "", inTimer = null;
