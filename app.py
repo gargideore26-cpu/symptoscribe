@@ -19,14 +19,6 @@ from report import build_report_pdf, clean_details
 MAX_CHARS = 5000
 _last_recorded = {}
 
-# The dataset is English only, so one case each for Hinglish, Hindi and Marathi shows the language support.
-HINDI_EXAMPLE = {"label": "हिन्दी", "text": "मुझे 3 दिन से तेज बुखार है, बदन दर्द और कमजोरी है। उल्टी नहीं है।"}
-MARATHI_EXAMPLE = {"label": "मराठी", "text": "मला २ दिवसांपासून ताप आहे आणि डोकेदुखी आहे, खोकला नाही."}
-HINGLISH_EXAMPLE = {
-    "label": "Hinglish",
-    "text": "Mujhe 2 din se bukhar hai aur sar dard bhi hai, khansi nahi hai. Kal se pet me dard bhi ho raha hai.",
-}
-
 def create_app() -> Flask:
     app = Flask(__name__)
     app.config["MAX_CONTENT_LENGTH"] = 64 * 1024
@@ -42,7 +34,7 @@ def create_app() -> Flask:
     @app.get("/api/examples")
     def examples():
         try:
-            return jsonify(dataset.examples() + [HINGLISH_EXAMPLE, HINDI_EXAMPLE, MARATHI_EXAMPLE])
+            return jsonify(dataset.examples())
         except dataset.DatasetMissing as e:
             return jsonify({"error": str(e)}), 503
 
