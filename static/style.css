@@ -269,7 +269,6 @@ code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; fo
 }
 
 /* ---------- interactivity */
-.live { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); cursor: pointer; }
 .hint { margin: -6px 0 10px; font-size: 13px; color: var(--muted); }
 @keyframes pulse { 50% { box-shadow: 0 0 0 4px rgba(192, 57, 43, .18); } }
 mark.hl { cursor: pointer; transition: opacity .15s, outline-color .15s; outline: 2px solid transparent; outline-offset: 2px; border-radius: 3px; }
@@ -812,7 +811,6 @@ textarea { min-height: 200px; font-size: 18px; line-height: 1.6; padding: 20px 2
 .actions .btn { padding: 11px 24px; }
 .options-row { display: flex; align-items: center; flex-wrap: wrap; gap: 14px 26px; margin-top: 18px; padding: 12px 0 0; border-top: 1px solid var(--line); font-size: 13.5px; color: var(--muted); }
 .options-row .opt { display: inline-flex; align-items: center; gap: 10px; }
-.options-row .live { font-size: 13.5px; }
 .options-row .count { margin-left: auto; }
 .examples { margin-top: 36px; }
 .examples-title { margin-bottom: 12px; }

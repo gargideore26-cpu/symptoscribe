@@ -398,16 +398,6 @@
     });
   }
 
-  /* ------------------------------------------------------------ live analysis */
-  let liveTimer = null;
-  function bindLive() {
-    textEl.addEventListener("input", () => {
-      if (!$("#live").checked) return;
-      clearTimeout(liveTimer);
-      if (!textEl.value.trim()) return;
-      liveTimer = setTimeout(analyze, 600);
-    });
-  }
   /* ------------------------------------------------------------ blobs follow the pointer */
   function bindBlobs() {
     const g = document.querySelector(".glow");
@@ -680,7 +670,6 @@
     bindBlobs();
     bindTheme();
     bindReportDialog();
-    bindLive();
     bindNavToggle();
     bindIntake();
     bindWelcome();
