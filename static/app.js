@@ -550,9 +550,7 @@
   }
   function inRender() {
     const base = inBase();
-    $("#in-hint").textContent = ["localhost", "127.0.0.1"].includes(location.hostname) && !inLan
-      ? "These links open on this computer only. To let a patient on the same Wi-Fi open one, start the app with HOST=0.0.0.0."
-      : "";
+    $("#in-hint").textContent = "";
     if (!inItems.length) { $("#in-list").innerHTML = '<div class="empty"><p>No links yet. Create one above.</p></div>'; return; }
     $("#in-list").innerHTML = inItems.map((it) => {
       const when = new Date((it.submitted || it.created) * 1000).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
