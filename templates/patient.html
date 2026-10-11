@@ -27,10 +27,12 @@
         <input id="p-name" type="text" maxlength="60" autocomplete="name">
         <label class="field-label" for="p-text">How are you feeling?</label>
         <textarea id="p-text" rows="8" maxlength="3000" placeholder="For example: I have had a fever and sore throat for 3 days. No cough. I take paracetamol."></textarea>
-        <div class="p-tools">
-          <button id="p-mic" class="btn" type="button" hidden>🎤 Speak</button>
-          <select id="p-lang" class="mic-lang" aria-label="Speaking language" hidden><option value="en-IN">English</option><option value="hi-IN">हिन्दी</option><option value="mr-IN">मराठी</option></select>
-          <span id="p-status" class="muted"></span>
+        <div class="p-tools" role="group" aria-label="Examples">
+          <span class="muted">Try an example:</span>
+          <button class="chip p-ex" type="button" data-i="0">English</button>
+          <button class="chip p-ex" type="button" data-i="1">Hinglish</button>
+          <button class="chip p-ex" type="button" data-i="2">हिन्दी</button>
+          <button class="chip p-ex" type="button" data-i="3">मराठी</button>
         </div>
         <button id="p-send" class="btn primary p-send" type="button">Send to my doctor</button>
         <p id="p-error" class="p-error" role="alert" hidden></p>

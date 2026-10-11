@@ -22,21 +22,17 @@
     }
   });
 
-  // optional dictation (Chrome and Safari only)
-  const Rec = window.SpeechRecognition || window.webkitSpeechRecognition;
-  if (!Rec) return;
-  const mic = $("#p-mic"), lang = $("#p-lang"), status = $("#p-status");
-  mic.hidden = false; lang.hidden = false;
-  let rec = null;
-  const stop = () => { if (rec) { rec.onend = null; try { rec.stop(); } catch { /* already stopped */ } rec = null; } mic.textContent = "🎤 Speak"; status.textContent = ""; };
-  mic.addEventListener("click", () => {
-    if (rec) return stop();
-    rec = new Rec(); rec.lang = lang.value; rec.continuous = true; rec.interimResults = false;
-    rec.onresult = (e) => {
-      for (let i = e.resultIndex; i < e.results.length; i++) if (e.results[i].isFinal) text.value = (text.value.trim() + " " + e.results[i][0].transcript.trim()).trim();
-    };
-    rec.onerror = () => { status.textContent = "The microphone could not start."; stop(); };
-    rec.onend = stop;
-    try { rec.start(); mic.textContent = "■ Stop"; status.textContent = "Listening…"; } catch { stop(); }
-  });
+  // example texts, for showing the form
+  const EXAMPLES = [
+    { name: "Asha", text: "I have had a fever and sore throat for 3 days. No cough. I take paracetamol." },
+    { name: "Asha", text: "Mujhe 2 din se bukhar hai aur sar dard bhi hai, khansi nahi hai. Kal se pet me dard bhi ho raha hai." },
+    { name: "आशा", text: "मुझे 3 दिन से तेज बुखार है, बदन दर्द और कमजोरी है। उल्टी नहीं है।" },
+    { name: "आशा", text: "मला २ दिवसांपासून ताप आहे आणि डोकेदुखी आहे, खोकला नाही." },
+  ];
+  document.querySelectorAll(".p-ex").forEach((b) => b.addEventListener("click", () => {
+    const ex = EXAMPLES[+b.dataset.i];
+    text.value = ex.text;
+    if (!$("#p-name").value.trim()) $("#p-name").value = ex.name;
+    err.hidden = true;
+  }));
 })();

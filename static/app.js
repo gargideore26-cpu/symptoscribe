@@ -558,41 +558,64 @@
   })();
 
   /* ------------------------------------------------------------ patient intake */
-  let inItems = [], inLan = "", inTimer = null;
+  let inItems = [], inLan = "", inTimer = null, inSeen = null, inNew = new Set(), inNoticeTimer = null;
   const LVL_SHORT = { routine: "Routine", attention: "Needs attention", urgent: "See soon", emergency: "Urgent care" };
 
   function inBase() {
     const local = ["localhost", "127.0.0.1", "[::1]"].includes(location.hostname);
     return local && inLan ? `http://${inLan}${location.port ? ":" + location.port : ""}` : location.origin;
   }
+  function inCard(it, base, isNew) {
+    const when = new Date((it.submitted || it.created) * 1000).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
+    if (!it.submitted) {
+      const url = base + "/p/" + it.token;
+      return `<div class="in-card"><div class="in-top"><b>${esc(it.label || "Patient link")}</b><span class="in-state wait">Waiting for the patient</span></div>
+        <div class="in-link"><input type="text" readonly value="${esc(url)}" aria-label="Patient link"><button class="btn small" type="button" data-copy="${esc(url)}">Copy link</button><button class="btn small" type="button" data-del="${esc(it.token)}">Delete</button></div>
+        <small class="muted">Created ${esc(when)}</small></div>`;
+    }
+    return `<div class="in-card lvl-${esc(it.level)}${isNew ? " is-new" : ""}"><div class="in-top"><b>${esc(it.name || it.label || "Patient")}</b><span class="in-state got">Received</span><span class="q-level">${esc(LVL_SHORT[it.level])}</span></div>
+      <p class="q-flag">${it.top_flag ? esc(it.top_flag) : "No red flags found."}</p>
+      <div class="q-chips">${it.symptoms.map((s) => `<span>${esc(s)}</span>`).join("")}</div>
+      <p class="in-text">${esc(it.text.length > 220 ? it.text.slice(0, 220) + "…" : it.text)}</p>
+      <div class="in-link"><button class="btn small primary" type="button" data-open="${esc(it.token)}">Open note</button><button class="btn small" type="button" data-del="${esc(it.token)}">Delete</button><small class="muted">Received ${esc(when)}</small></div></div>`;
+  }
   function inRender() {
     const base = inBase();
     $("#in-hint").textContent = "";
-    if (!inItems.length) { $("#in-list").innerHTML = '<div class="empty"><p>No links yet. Create one above.</p></div>'; return; }
-    $("#in-list").innerHTML = inItems.map((it) => {
-      const when = new Date((it.submitted || it.created) * 1000).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
-      if (!it.submitted) {
-        const url = base + "/p/" + it.token;
-        return `<div class="in-card"><div class="in-top"><b>${esc(it.label || "Patient link")}</b><span class="in-state wait">Waiting for the patient</span></div>
-          <div class="in-link"><input type="text" readonly value="${esc(url)}" aria-label="Patient link"><button class="btn small" type="button" data-copy="${esc(url)}">Copy link</button><button class="btn small" type="button" data-del="${esc(it.token)}">Delete</button></div>
-          <small class="muted">Created ${esc(when)}</small></div>`;
-      }
-      return `<div class="in-card lvl-${esc(it.level)}"><div class="in-top"><b>${esc(it.name || it.label || "Patient")}</b><span class="in-state got">Received</span><span class="q-level">${esc(LVL_SHORT[it.level])}</span></div>
-        <p class="q-flag">${it.top_flag ? esc(it.top_flag) : "No red flags found."}</p>
-        <div class="q-chips">${it.symptoms.map((s) => `<span>${esc(s)}</span>`).join("")}</div>
-        <p class="in-text">${esc(it.text.length > 220 ? it.text.slice(0, 220) + "…" : it.text)}</p>
-        <div class="in-link"><button class="btn small primary" type="button" data-open="${esc(it.token)}">Open note</button><button class="btn small" type="button" data-del="${esc(it.token)}">Delete</button><small class="muted">Received ${esc(when)}</small></div></div>`;
-    }).join("");
+    const waiting = inItems.filter((it) => !it.submitted);
+    const got = inItems.filter((it) => it.submitted).sort((x, y) => y.submitted - x.submitted);
+    $("#in-list").innerHTML = waiting.length
+      ? waiting.map((it) => inCard(it, base, false)).join("")
+      : '<div class="empty"><p>No links waiting. Create one above.</p></div>';
+    $("#in-got-n").textContent = got.length;
+    $("#in-received").innerHTML = got.length
+      ? got.map((it) => inCard(it, base, inNew.has(it.token))).join("")
+      : '<div class="empty"><p>No forms received yet. When a patient sends theirs, it appears here.</p></div>';
   }
   async function loadIntake() {
     clearInterval(inTimer);
     try {
       const d = await (await fetch("/api/intake")).json();
       inItems = d.items; inLan = d.lan_ip || "";
-      const typing = document.activeElement && document.activeElement.closest && document.activeElement.closest("#in-list");
+      // tell the doctor when a patient's form has just come back
+      const got = inItems.filter((it) => it.submitted);
+      if (inSeen) {
+        const fresh = got.filter((it) => !inSeen.has(it.token));
+        fresh.forEach((it) => inNew.add(it.token));
+        if (fresh.length) {
+          const who = fresh.map((it) => it.name || it.label || "a patient").join(", ");
+          const box = $("#in-notice");
+          box.textContent = `✓ Received ${who}'s form`;
+          box.hidden = false;
+          clearTimeout(inNoticeTimer);
+          inNoticeTimer = setTimeout(() => { box.hidden = true; }, 8000);
+        }
+      }
+      inSeen = new Set(got.map((it) => it.token));
+      const typing = document.activeElement && document.activeElement.closest && document.activeElement.closest("#in-list, #in-received");
       if (!typing) inRender();
     } catch { $("#in-list").innerHTML = '<div class="error" role="alert">Could not load the forms.</div>'; }
-    inTimer = setInterval(() => { if ($("#view-intake").hidden) clearInterval(inTimer); else loadIntake(); }, 8000);
+    inTimer = setInterval(() => { if ($("#view-intake").hidden) clearInterval(inTimer); else loadIntake(); }, 4000);
   }
   function bindIntake() {
     $("#in-create").addEventListener("click", async () => {
@@ -605,7 +628,7 @@
       } finally { btn.disabled = false; }
     });
     $("#in-refresh").addEventListener("click", loadIntake);
-    $("#in-list").addEventListener("click", async (e) => {
+    const onListClick = async (e) => {
       const c = e.target.closest("[data-copy]"), d = e.target.closest("[data-del]"), o = e.target.closest("[data-open]");
       if (c) {
         try { await navigator.clipboard.writeText(c.dataset.copy); c.textContent = "Copied"; } catch { c.previousElementSibling.select(); c.textContent = "Press Ctrl+C"; }
@@ -617,7 +640,9 @@
         const it = inItems.find((x) => x.token === o.dataset.open);
         if (it) openInAnalyzer(it.text);
       }
-    });
+    };
+    $("#in-list").addEventListener("click", onListClick);
+    $("#in-received").addEventListener("click", onListClick);
   }
 
   /* ------------------------------------------------------------ side menu hide / show */
