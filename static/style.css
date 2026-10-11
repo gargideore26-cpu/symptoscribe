@@ -595,7 +595,7 @@ body, .top, .window, .card, .steps li, .metric, .result, textarea { transition: 
 :root[data-theme="light"] body { background: #fbf7f8; color: var(--ink); }
 :root[data-theme="light"] .top { background: rgba(251,247,248,.75); }
 :root[data-theme="light"] .g-top { background: radial-gradient(ellipse at 50% 30%, rgba(229,35,63,.30) 0%, rgba(255,120,140,.16) 38%, transparent 70%); }
-:root[data-theme="light"] .cursor-glow { background: radial-gradient(circle, rgba(229,35,63,.17) 0%, rgba(255,120,140,.08) 40%, transparent 68%); }
+:root[data-theme="light"] .cursor-glow { background: radial-gradient(circle, rgba(217,31,61,.42) 0%, rgba(229,35,63,.22) 40%, transparent 68%); }
 :root[data-theme="light"] .star { background: #d91f3d; opacity: .28; }
 :root[data-theme="light"] .theme-toggle { background: rgba(27,18,23,.05); border-color: rgba(27,18,23,.2); }
 :root[data-theme="light"] .cta { border-color: rgba(27,18,23,.3); color: var(--ink); }
