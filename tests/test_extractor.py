@@ -397,6 +397,11 @@ class WebApi(unittest.TestCase):
             self.assertEqual(r.status_code, 200)
             self.assertTrue(r.get_json()["symptoms"], ex["label"])
 
+    def test_examples_include_all_languages(self):
+        labels = [e["label"] for e in self.client.get("/api/examples").get_json()]
+        for label in ("Hinglish", "हिन्दी", "मराठी"):
+            self.assertIn(label, labels)
+
     def test_report_pdf_with_details(self):
         r = self.client.post("/api/report", json={"text": "मुझे बुखार है", "details": {"name": "Asha", "age": "34", "date": "2026-10-06", "doctor": "Dr Rao"}})
         self.assertEqual(r.status_code, 200)
