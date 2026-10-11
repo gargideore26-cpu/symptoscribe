@@ -62,7 +62,8 @@ def _dur(s: dict) -> str:
     d = s.get("duration")
     if not d:
         return "-"
-    return d["text"] if not _needs_unicode(d["text"]) else (d.get("approx") or "-")
+    label = d.get("label") or d["text"]
+    return label if not _needs_unicode(label) else (d.get("approx") or "-")
 
 
 def clean_details(raw) -> dict:

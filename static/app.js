@@ -106,7 +106,7 @@
 
   function rowHtml(s, negated) {
     const dur = s.duration
-      ? `${esc(s.duration.text)}${s.duration.approx && /\d/.test(s.duration.text) === false ? `<small class="approx">~${esc(s.duration.approx)}</small>` : ""}`
+      ? `${esc(s.duration.label || s.duration.text)}${s.duration.approx && (s.duration.label || s.duration.text) === s.duration.text && /\d/.test(s.duration.text) === false ? `<small class="approx">~${esc(s.duration.approx)}</small>` : ""}`
       : '<span class="dash">—</span>';
     const sev = s.severity
       ? `<span class="sev">${meter(s.severity.score)}${esc(cap(s.severity.label))}</span>${

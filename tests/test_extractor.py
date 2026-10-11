@@ -402,6 +402,15 @@ class WebApi(unittest.TestCase):
         for label in ("Hinglish", "हिन्दी", "मराठी"):
             self.assertIn(label, labels)
 
+    def test_table_values_are_english_for_every_language(self):
+        for text in ("Mujhe 2 din se bukhar hai, khansi nahi hai.", "मुझे 3 दिन से बुखार है, उल्टी नहीं है।", "मला २ दिवसांपासून ताप आहे, खोकला नाही."):
+            body = self.client.post("/api/analyze", json={"text": text}).get_json()
+            for s in body["symptoms"]:
+                shown = [s["reason"], (s["duration"] or {}).get("label", "")]
+                for v in shown:
+                    self.assertFalse(any("\u0900" <= c <= "\u097f" for c in v), (text, v))
+            self.assertIn("2 days" if "2" in text or "२" in text else "3 days", [(s["duration"] or {}).get("label") for s in body["symptoms"]])
+
     def test_report_pdf_with_details(self):
         r = self.client.post("/api/report", json={"text": "मुझे बुखार है", "details": {"name": "Asha", "age": "34", "date": "2026-10-06", "doctor": "Dr Rao"}})
         self.assertEqual(r.status_code, 200)

@@ -371,7 +371,7 @@ def mark_status(toks, mentions) -> None:
 
             def neg(m, trig=trig):
                 if m.status == "present":
-                    m.status, m.reason = "absent", f"negated by '{trig}'"
+                    m.status, m.reason = "absent", f"negated by '{_en_cue(trig, 'not')}'"
             _scope_walk(toks, i + ln, mention_at, neg)
             i += ln
         else:
@@ -387,10 +387,10 @@ def mark_status(toks, mentions) -> None:
             if w in L.SCOPE_TERMINATORS or w == ",":
                 break
             if w in L.POST_NEG_TOKENS:
-                m.status, m.reason = "absent", f"negated by '{toks[j].text}'"
+                m.status, m.reason = "absent", f"negated by '{_en_cue(toks[j].text, 'not')}'"
                 break
             if w in L.RESOLVED_TOKENS:
-                m.status, m.reason = "resolved", f"'{toks[j].text}'"
+                m.status, m.reason = "resolved", f"'{_en_cue(toks[j].text, 'gone')}'"
                 break
             if any(tuple(x.norm for x in toks[j:j + len(p)]) == tuple(p) for p in L.POST_NEG_PHRASES):
                 m.status, m.reason = "absent", "negated after the symptom"
@@ -408,7 +408,7 @@ def mark_status(toks, mentions) -> None:
 
                 def unc(m, trig=trig):
                     if m.status == "present":
-                        m.status, m.reason = "uncertain", f"hedged by '{trig}'"
+                        m.status, m.reason = "uncertain", f"hedged by '{_en_cue(trig, 'maybe')}'"
                 _scope_walk(toks, i + plen, mention_at, unc, limit=3, terminators=CONTRAST_ONLY, extra_glue=UNCERTAIN_GLUE)
                 break
 
@@ -1251,6 +1251,28 @@ HINDI_UNITS = {"din", "dino", "hafte", "hafta", "haftey", "hafton", "mahine", "m
 DURATION_PREPS = {"for", "since", "from", "past", "last", "over", "about", "around", "nearly", "almost", "started", "the", "approximately", "roughly", "this", "yesterday", "today"}
 
 
+_ROMAN_HI = {"nahi": "not", "nahin": "not", "nhi": "not", "shayad": "maybe"}
+
+
+def _en_cue(text: str, fallback: str) -> str:
+    """The cue word as shown to the doctor: always English, even when the patient wrote it in Hindi or Marathi."""
+    if indic.has_devanagari(text):
+        return fallback
+    return _ROMAN_HI.get(text.lower(), text)
+
+
+def duration_label(d: dict) -> str:
+    """Duration for the table in English; the patient's own words stay highlighted in the text."""
+    txt = d["text"]
+    low = txt.lower()
+    if not (indic.has_devanagari(txt) or any(w in HINDI_UNITS for w in low.split()) or low in ("kal se", "aaj se", "parso se")):
+        return txt
+    days = d["days"]
+    if d["kind"] == "relative":
+        return "since today" if days < 1 else "since yesterday" if days == 1 else f"since {fmt_days(days)} ago"
+    return fmt_days(days) if days >= 1 else "today"
+
+
 def fmt_days(d) -> str:
     if d is None:
         return ""
@@ -1453,6 +1475,7 @@ def analyze(text: str, ref_date: Optional[dt.date] = None) -> dict:
         r["id"] = i
         if r["duration"]:
             r["duration"]["approx"] = fmt_days(r["duration"]["days"])
+            r["duration"]["label"] = duration_label(r["duration"])
         for t in r["triggers"]:
             t["label"] = trigger_label(t)
         r["summary"] = describe(r)
