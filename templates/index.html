@@ -31,7 +31,6 @@
     <nav aria-label="Sections" id="nav">
       <a href="#home" data-view="home">Home</a>
       <a href="#analyzer" data-view="analyzer">Analyzer</a>
-      <a href="#intake" data-view="intake">Check in</a>
       <a href="#dashboard" data-view="dashboard">Insights</a>
       <a class="nav-sub nav-first" href="#evaluation" data-view="evaluation">How does it work</a>
     </nav>
@@ -117,30 +116,6 @@
 
     </section>
 
-    <!-- ====================================================== PATIENT INTAKE -->
-    <section id="view-intake" class="view" hidden>
-      <div class="window">
-        <div class="win-bar"><i></i><i></i><i></i><span>SymptoScribe · Check in</span></div>
-        <h2 class="section-title">Check in</h2>
-        <p class="lede">Make a link and send it to the patient. They write how they feel at home, and the note is ready here before the appointment.</p>
-        <div class="in-make">
-          <label class="field-label" for="in-label">Patient name or note (optional)</label>
-          <div class="in-make-row">
-            <input id="in-label" type="text" maxlength="60" placeholder="Patient name" autocomplete="off">
-            <button id="in-create" class="btn primary" type="button">Create patient link</button>
-          </div>
-          <p id="in-hint" class="muted in-hint"></p>
-        </div>
-        <div class="in-head"><h3>Forms</h3><button id="in-refresh" class="btn small" type="button">Refresh</button></div>
-        <div id="in-notice" class="in-notice" role="status" hidden></div>
-        <div id="in-list" aria-live="polite"></div>
-        <div class="in-head"><h3>Received <span id="in-got-n" class="in-n">0</span></h3></div>
-        <div id="in-received" aria-live="polite"></div>
-      </div>
-    </section>
-
-
-    <!-- ====================================================== DASHBOARD -->
     <section id="view-dashboard" class="view" hidden>
       <div class="window">
         <div class="win-bar"><i></i><i></i><i></i><span>SymptoScribe · Insights</span></div>

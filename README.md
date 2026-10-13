@@ -19,7 +19,6 @@ It also writes a one-paragraph note and lists any red flags. The patient's text 
 ## What is on the website
 
 - **Analyzer**: paste or type the patient's words, press Analyze, and read the review. You can download it as a PDF report.
-- **Check in**: the doctor makes a link and sends it to a patient. The patient opens it on their phone, writes their symptoms, and sends them. The note then shows up in the doctor's list.
 - **Insights**: simple counts of the notes analysed (common symptoms, how urgent, which language). It stores counts only, never the patient's words.
 - **How does it work**: a short explanation of the steps.
 
@@ -36,8 +35,6 @@ python app.py                      # then open http://127.0.0.1:5000
 ```
 
 If port 5000 is busy, run it with `PORT=5002 python app.py`.
-
-To let a phone on the same Wi-Fi open a Check in link, start it with `HOST=0.0.0.0`.
 
 Tests and accuracy check:
 
@@ -68,7 +65,6 @@ Hindi and Marathi words are mapped to the same vocabulary as English, so the hig
 ```
 app.py            the web server
 nlp/              the language engine (extractor.py, lexicon.py, indic.py)
-intake.py         saves Check in forms
 stats.py          counts for the Insights page
 report.py         builds the PDF report
 dataset.py        loads the example texts
@@ -95,5 +91,4 @@ Things it still gets wrong:
 - A symptom that is not found does not mean the patient did not say it. That is why the marked text is shown.
 - The Hindi and Marathi word list is small.
 - The PDF cannot print Devanagari letters, so for those texts it lists the symptoms it found in English.
-- Check in has no login, and the saved forms (`data/intake.json`) are not encrypted. Anyone who can open the site can read them. Use made-up data only.
 - If a text mentions self-harm, it shows the Tele-MANAS helpline (14416 or 1-800-891-4416 in India).

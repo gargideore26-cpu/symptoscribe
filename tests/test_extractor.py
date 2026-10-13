@@ -438,37 +438,6 @@ class WebApi(unittest.TestCase):
 
 
 
-class CheckIn(unittest.TestCase):
-    def setUp(self):
-        import os, tempfile
-        self.tmp = tempfile.TemporaryDirectory()
-        os.environ["INTAKE_FILE"] = os.path.join(self.tmp.name, "intake.json")
-        from app import create_app
-        self.client = create_app().test_client()
-
-    def tearDown(self):
-        import os
-        os.environ.pop("INTAKE_FILE", None)
-        self.tmp.cleanup()
-
-    def test_intake_round_trip(self):
-        tok = self.client.post("/api/intake", json={"label": "Asha"}).get_json()["token"]
-        self.assertEqual(self.client.get(f"/p/{tok}").status_code, 200)
-        self.assertFalse(self.client.get("/api/intake").get_json()["items"][0]["submitted"])
-        r = self.client.post(f"/api/intake/{tok}/submit", json={"name": "Asha", "text": "fever for 3 days, no cough"})
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(self.client.post(f"/api/intake/{tok}/submit", json={"text": "again"}).status_code, 409)
-        item = self.client.get("/api/intake").get_json()["items"][0]
-        self.assertTrue(item["submitted"])
-        self.assertIn("fever", item["symptoms"])
-        self.assertEqual(self.client.delete(f"/api/intake/{tok}").status_code, 200)
-        self.assertEqual(self.client.get("/api/intake").get_json()["items"], [])
-
-    def test_bad_token(self):
-        self.assertEqual(self.client.get("/p/nope").status_code, 404)
-        self.assertEqual(self.client.post("/api/intake/nope/submit", json={"text": "fever"}).status_code, 404)
-
-
 class Insights(unittest.TestCase):
     def setUp(self):
         import os, tempfile
